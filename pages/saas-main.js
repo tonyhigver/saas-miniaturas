@@ -1,6 +1,6 @@
 // pages/saas-main.js
 import { useSession, signOut } from "next-auth/react"
-import Sidebar from "@/components/Sidebar"
+import Sidebar from "../components/Sidebar" // <- Importación relativa
 
 export default function SaaSMain() {
   const { data: session } = useSession()
