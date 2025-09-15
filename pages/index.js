@@ -1,13 +1,22 @@
 // pages/index.js
-import { useSession, signIn } from "next-auth/react"
+import { useSession, signIn, signOut } from "next-auth/react"
 import { useRouter } from "next/router"
 
 export default function Home() {
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
   const router = useRouter()
 
   const handleStart = () => {
     router.push("/saas-main")
+  }
+
+  // Mostrar loading mientras NextAuth verifica sesión
+  if (status === "loading") {
+    return (
+      <div className="flex items-center justify-center min-h-screen text-white">
+        Cargando...
+      </div>
+    )
   }
 
   return (
@@ -30,7 +39,7 @@ export default function Home() {
 
       {!session ? (
         <button
-          onClick={() => signIn("google")}
+          onClick={() => signIn("google", { callbackUrl: "/" })}
           className="bg-white text-gray-800 px-8 py-3 rounded-lg text-lg font-semibold hover:bg-gray-200 transition mb-4 flex items-center gap-2 shadow-md"
         >
           Iniciar sesión con Google
@@ -45,6 +54,12 @@ export default function Home() {
             className="bg-green-600 text-white px-8 py-3 rounded-lg text-lg hover:bg-green-700 transition shadow-md"
           >
             EMPEZAR
+          </button>
+          <button
+            onClick={() => signOut({ callbackUrl: "/" })}
+            className="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 transition mt-2"
+          >
+            Cerrar sesión
           </button>
         </div>
       )}
