@@ -1,45 +1,61 @@
 // pages/create-miniature.js
 import { useState } from "react"
 import { useSession, signOut } from "next-auth/react"
-import { useRouter } from "next/router"
 
 export default function CreateMiniature() {
   const { data: session } = useSession()
-  const router = useRouter()
 
+  // Estado para todos los valores
   const [formData, setFormData] = useState({
     description: "",
     category: "",
     videoFile: null,
     videoPlot: "",
     titleText: "",
-    titleFont: "Arial",
     titleColor: "#FFFFFF",
-    mainColors: ["#000000"],
+    mainColors: "",
     referenceImages: [],
-    emojis: [],
+    emojis: "",
     format: "16:9",
     clickbaitLevel: 50,
     numFaces: 1,
-    visualElements: [],
+    visualElements: "",
     additionalText: "",
     numResults: 3,
     polarize: false,
     template: "",
   })
 
-  const [sectionsEnabled, setSectionsEnabled] = useState({
-    extractInfo: true,
-    visualParts: true,
-    extraPoints: true,
+  // Estado para activar/desactivar cada campo
+  const [enabledFields, setEnabledFields] = useState({
+    description: false,
+    category: false,
+    videoFile: false,
+    videoPlot: false,
+    titleText: false,
+    titleColor: false,
+    mainColors: false,
+    referenceImages: false,
+    emojis: false,
+    format: false,
+    clickbaitLevel: false,
+    numFaces: false,
+    visualElements: false,
+    additionalText: false,
+    numResults: false,
+    polarize: false,
+    template: false,
   })
 
+  // Control de cambios
   const handleChange = (e) => {
     const { name, value, type, checked, files } = e.target
-    if (type === "checkbox") {
-      setSectionsEnabled((prev) => ({ ...prev, [name]: checked }))
-    } else if (type === "file") {
+    if (type === "file") {
       setFormData((prev) => ({ ...prev, [name]: files }))
+    } else if (type === "checkbox" && name in enabledFields) {
+      setEnabledFields((prev) => ({ ...prev, [name]: checked }))
+    } else if (type === "checkbox") {
+      setFormData((prev) => ({ ...prev, [name]: checked }))
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }))
     }
@@ -47,8 +63,17 @@ export default function CreateMiniature() {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    // Aquí llamarías a tu backend con fetch o axios
-    console.log("Enviando datos al backend:", formData)
+
+    // Filtrar solo los campos activos
+    const activeData = {}
+    for (const key in formData) {
+      if (enabledFields[key]) {
+        activeData[key] = formData[key]
+      }
+    }
+
+    console.log("Datos enviados al backend:", activeData)
+    // Aquí iría fetch/axios para mandar los datos a tu backend
   }
 
   if (!session) {
@@ -75,170 +100,245 @@ export default function CreateMiniature() {
       </header>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-
-        {/* 1️⃣ Extraer info de la miniatura */}
+        {/* 1️⃣ Extraer info */}
         <div className="border p-4 rounded-lg">
-          <label className="flex items-center gap-2">
-            <input type="checkbox" name="extractInfo" checked={sectionsEnabled.extractInfo} onChange={handleChange} />
-            <span className="font-semibold">Extraer información de la miniatura</span>
+          <h2 className="text-xl font-semibold mb-2">1️⃣ Extraer información</h2>
+
+          <label className="flex gap-2 items-center">
+            <input type="checkbox" name="description" checked={enabledFields.description} onChange={handleChange} />
+            Prompt / Descripción de la miniatura
           </label>
-          {sectionsEnabled.extractInfo && (
-            <div className="mt-2 flex flex-col gap-2">
-              <input
-                type="text"
-                name="description"
-                placeholder="Descripción / Prompt"
-                className="p-2 rounded bg-gray-800"
-                value={formData.description}
-                onChange={handleChange}
-              />
-              <select name="category" value={formData.category} onChange={handleChange} className="p-2 rounded bg-gray-800">
-                <option value="">Selecciona categoría</option>
-                <option value="Gaming">Gaming</option>
-                <option value="Tutorial">Tutorial</option>
-                <option value="Vlog">Vlog</option>
-                <option value="Educación">Educación</option>
-              </select>
-              <input
-                type="file"
-                name="videoFile"
-                accept="video/*"
-                onChange={handleChange}
-              />
-              <textarea
-                name="videoPlot"
-                placeholder="Resumen / Plot del video"
-                className="p-2 rounded bg-gray-800"
-                value={formData.videoPlot}
-                onChange={handleChange}
-              />
-            </div>
+          {enabledFields.description && (
+            <input
+              type="text"
+              name="description"
+              placeholder="Ejemplo: Miniatura de un gameplay épico..."
+              className="p-2 w-full rounded bg-gray-800"
+              value={formData.description}
+              onChange={handleChange}
+            />
+          )}
+
+          <label className="flex gap-2 items-center mt-3">
+            <input type="checkbox" name="category" checked={enabledFields.category} onChange={handleChange} />
+            Categoría
+          </label>
+          {enabledFields.category && (
+            <select name="category" value={formData.category} onChange={handleChange} className="p-2 rounded bg-gray-800">
+              <option value="">Selecciona</option>
+              <option value="Gaming">Gaming</option>
+              <option value="Tutorial">Tutorial</option>
+              <option value="Vlog">Vlog</option>
+              <option value="Educación">Educación</option>
+            </select>
+          )}
+
+          <label className="flex gap-2 items-center mt-3">
+            <input type="checkbox" name="videoFile" checked={enabledFields.videoFile} onChange={handleChange} />
+            Subir video para analizar plot
+          </label>
+          {enabledFields.videoFile && <input type="file" name="videoFile" accept="video/*" onChange={handleChange} />}
+
+          <label className="flex gap-2 items-center mt-3">
+            <input type="checkbox" name="videoPlot" checked={enabledFields.videoPlot} onChange={handleChange} />
+            Escribir plot del video
+          </label>
+          {enabledFields.videoPlot && (
+            <textarea
+              name="videoPlot"
+              placeholder="Resumen completo del video..."
+              className="p-2 w-full rounded bg-gray-800"
+              value={formData.videoPlot}
+              onChange={handleChange}
+            />
           )}
         </div>
 
         {/* 2️⃣ Partes visuales */}
         <div className="border p-4 rounded-lg">
-          <label className="flex items-center gap-2">
-            <input type="checkbox" name="visualParts" checked={sectionsEnabled.visualParts} onChange={handleChange} />
-            <span className="font-semibold">Partes visuales</span>
+          <h2 className="text-xl font-semibold mb-2">2️⃣ Partes visuales</h2>
+
+          <label className="flex gap-2 items-center">
+            <input type="checkbox" name="titleText" checked={enabledFields.titleText} onChange={handleChange} />
+            Texto en la miniatura
           </label>
-          {sectionsEnabled.visualParts && (
-            <div className="mt-2 flex flex-col gap-2">
-              <input
-                type="text"
-                name="titleText"
-                placeholder="Texto principal"
-                className="p-2 rounded bg-gray-800"
-                value={formData.titleText}
-                onChange={handleChange}
-              />
-              <input
-                type="color"
-                name="titleColor"
-                value={formData.titleColor}
-                onChange={handleChange}
-              />
-              <input
-                type="text"
-                name="mainColors"
-                placeholder="Colores principales separados por coma"
-                className="p-2 rounded bg-gray-800"
-                value={formData.mainColors}
-                onChange={handleChange}
-              />
-              <input
-                type="file"
-                name="referenceImages"
-                multiple
-                accept="image/*"
-                onChange={handleChange}
-              />
-              <input
-                type="text"
-                name="emojis"
-                placeholder="Emojis o stickers separados por coma"
-                className="p-2 rounded bg-gray-800"
-                value={formData.emojis}
-                onChange={handleChange}
-              />
-              <select name="format" value={formData.format} onChange={handleChange} className="p-2 rounded bg-gray-800">
-                <option value="16:9">16:9</option>
-                <option value="1:1">1:1</option>
-                <option value="9:16">9:16</option>
-              </select>
-              <input
-                type="range"
-                min="0"
-                max="100"
-                name="clickbaitLevel"
-                value={formData.clickbaitLevel}
-                onChange={handleChange}
-              />
-              <input
-                type="number"
-                name="numFaces"
-                min="0"
-                max="5"
-                placeholder="Número de caras"
-                className="p-2 rounded bg-gray-800"
-                value={formData.numFaces}
-                onChange={handleChange}
-              />
-              <input
-                type="text"
-                name="visualElements"
-                placeholder="Elementos visuales separados por coma"
-                className="p-2 rounded bg-gray-800"
-                value={formData.visualElements}
-                onChange={handleChange}
-              />
-              <textarea
-                name="additionalText"
-                placeholder="Texto adicional"
-                className="p-2 rounded bg-gray-800"
-                value={formData.additionalText}
-                onChange={handleChange}
-              />
-            </div>
+          {enabledFields.titleText && (
+            <input
+              type="text"
+              name="titleText"
+              placeholder="Ejemplo: ¡No creerás lo que pasó!"
+              className="p-2 w-full rounded bg-gray-800"
+              value={formData.titleText}
+              onChange={handleChange}
+            />
+          )}
+
+          <label className="flex gap-2 items-center mt-3">
+            <input type="checkbox" name="titleColor" checked={enabledFields.titleColor} onChange={handleChange} />
+            Color del texto
+          </label>
+          {enabledFields.titleColor && (
+            <input type="color" name="titleColor" value={formData.titleColor} onChange={handleChange} />
+          )}
+
+          <label className="flex gap-2 items-center mt-3">
+            <input type="checkbox" name="mainColors" checked={enabledFields.mainColors} onChange={handleChange} />
+            Colores principales
+          </label>
+          {enabledFields.mainColors && (
+            <input
+              type="text"
+              name="mainColors"
+              placeholder="Ejemplo: #FF0000, #00FF00"
+              className="p-2 w-full rounded bg-gray-800"
+              value={formData.mainColors}
+              onChange={handleChange}
+            />
+          )}
+
+          <label className="flex gap-2 items-center mt-3">
+            <input type="checkbox" name="referenceImages" checked={enabledFields.referenceImages} onChange={handleChange} />
+            Imágenes de referencia
+          </label>
+          {enabledFields.referenceImages && <input type="file" name="referenceImages" accept="image/*" multiple onChange={handleChange} />}
+
+          <label className="flex gap-2 items-center mt-3">
+            <input type="checkbox" name="emojis" checked={enabledFields.emojis} onChange={handleChange} />
+            Emojis o stickers
+          </label>
+          {enabledFields.emojis && (
+            <input
+              type="text"
+              name="emojis"
+              placeholder="Ejemplo: 😂🔥🎮"
+              className="p-2 w-full rounded bg-gray-800"
+              value={formData.emojis}
+              onChange={handleChange}
+            />
+          )}
+
+          <label className="flex gap-2 items-center mt-3">
+            <input type="checkbox" name="format" checked={enabledFields.format} onChange={handleChange} />
+            Formato
+          </label>
+          {enabledFields.format && (
+            <select name="format" value={formData.format} onChange={handleChange} className="p-2 rounded bg-gray-800">
+              <option value="16:9">16:9 (YouTube)</option>
+              <option value="1:1">1:1 (Instagram)</option>
+              <option value="9:16">9:16 (Shorts/TikTok)</option>
+            </select>
+          )}
+
+          <label className="flex gap-2 items-center mt-3">
+            <input type="checkbox" name="clickbaitLevel" checked={enabledFields.clickbaitLevel} onChange={handleChange} />
+            Nivel de clickbait
+          </label>
+          {enabledFields.clickbaitLevel && (
+            <input
+              type="range"
+              min="0"
+              max="100"
+              name="clickbaitLevel"
+              value={formData.clickbaitLevel}
+              onChange={handleChange}
+            />
+          )}
+
+          <label className="flex gap-2 items-center mt-3">
+            <input type="checkbox" name="numFaces" checked={enabledFields.numFaces} onChange={handleChange} />
+            Número de caras
+          </label>
+          {enabledFields.numFaces && (
+            <input
+              type="number"
+              min="0"
+              max="10"
+              name="numFaces"
+              className="p-2 rounded bg-gray-800"
+              value={formData.numFaces}
+              onChange={handleChange}
+            />
+          )}
+
+          <label className="flex gap-2 items-center mt-3">
+            <input type="checkbox" name="visualElements" checked={enabledFields.visualElements} onChange={handleChange} />
+            Elementos visuales
+          </label>
+          {enabledFields.visualElements && (
+            <input
+              type="text"
+              name="visualElements"
+              placeholder="Ejemplo: rayos, flechas, círculos"
+              className="p-2 w-full rounded bg-gray-800"
+              value={formData.visualElements}
+              onChange={handleChange}
+            />
+          )}
+
+          <label className="flex gap-2 items-center mt-3">
+            <input type="checkbox" name="additionalText" checked={enabledFields.additionalText} onChange={handleChange} />
+            Texto adicional
+          </label>
+          {enabledFields.additionalText && (
+            <textarea
+              name="additionalText"
+              placeholder="Escribe frases o textos secundarios..."
+              className="p-2 w-full rounded bg-gray-800"
+              value={formData.additionalText}
+              onChange={handleChange}
+            />
           )}
         </div>
 
-        {/* 3️⃣ Puntos aparte */}
+        {/* 3️⃣ Puntos adicionales */}
         <div className="border p-4 rounded-lg">
-          <label className="flex items-center gap-2">
-            <input type="checkbox" name="extraPoints" checked={sectionsEnabled.extraPoints} onChange={handleChange} />
-            <span className="font-semibold">Puntos adicionales</span>
+          <h2 className="text-xl font-semibold mb-2">3️⃣ Puntos adicionales</h2>
+
+          <label className="flex gap-2 items-center">
+            <input type="checkbox" name="numResults" checked={enabledFields.numResults} onChange={handleChange} />
+            Número de miniaturas a generar
           </label>
-          {sectionsEnabled.extraPoints && (
-            <div className="mt-2 flex flex-col gap-2">
+          {enabledFields.numResults && (
+            <input
+              type="number"
+              min="1"
+              max="20"
+              name="numResults"
+              className="p-2 rounded bg-gray-800"
+              value={formData.numResults}
+              onChange={handleChange}
+            />
+          )}
+
+          <label className="flex gap-2 items-center mt-3">
+            <input type="checkbox" name="polarize" checked={enabledFields.polarize} onChange={handleChange} />
+            Polarización de resultados
+          </label>
+          {enabledFields.polarize && (
+            <label className="flex gap-2 items-center">
               <input
-                type="number"
-                name="numResults"
-                min="1"
-                max="20"
-                placeholder="Cantidad de miniaturas a generar"
-                className="p-2 rounded bg-gray-800"
-                value={formData.numResults}
+                type="checkbox"
+                name="polarize"
+                checked={formData.polarize}
                 onChange={handleChange}
               />
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  name="polarize"
-                  checked={formData.polarize}
-                  onChange={handleChange}
-                />
-                Polarizar resultados (variantes distintas)
-              </label>
-              <input
-                type="text"
-                name="template"
-                placeholder="Plantilla base para la miniatura"
-                className="p-2 rounded bg-gray-800"
-                value={formData.template}
-                onChange={handleChange}
-              />
-            </div>
+              Generar variantes muy diferentes
+            </label>
+          )}
+
+          <label className="flex gap-2 items-center mt-3">
+            <input type="checkbox" name="template" checked={enabledFields.template} onChange={handleChange} />
+            Plantilla base
+          </label>
+          {enabledFields.template && (
+            <input
+              type="text"
+              name="template"
+              placeholder="Ejemplo: Plantilla inspirada en MrBeast"
+              className="p-2 w-full rounded bg-gray-800"
+              value={formData.template}
+              onChange={handleChange}
+            />
           )}
         </div>
 
