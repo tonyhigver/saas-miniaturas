@@ -1,9 +1,11 @@
 // pages/create-form.js
 import { useState } from "react"
 import { useSession, signOut } from "next-auth/react"
+import { useRouter } from "next/router"
 
 export default function CreateForm() {
   const { data: session } = useSession()
+  const router = useRouter() // Para navegación al salir
 
   // Estado para todos los valores
   const [formData, setFormData] = useState({
@@ -95,6 +97,12 @@ export default function CreateForm() {
             className="bg-red-500 px-4 py-2 rounded-lg hover:bg-red-600"
           >
             Cerrar sesión
+          </button>
+          <button
+            onClick={() => router.back()}
+            className="bg-gray-600 px-4 py-2 rounded-lg hover:bg-gray-700"
+          >
+            Salir
           </button>
         </div>
       </header>

@@ -1,9 +1,11 @@
 // pages/create-video.js
 import { useState } from "react"
 import { useSession, signOut } from "next-auth/react"
+import { useRouter } from "next/router"
 
 export default function CreateVideo() {
   const { data: session } = useSession()
+  const router = useRouter()
   const [videoFile, setVideoFile] = useState(null)
 
   const handleFileChange = (e) => {
@@ -41,6 +43,12 @@ export default function CreateVideo() {
             className="bg-red-500 px-4 py-2 rounded-lg hover:bg-red-600"
           >
             Cerrar sesión
+          </button>
+          <button
+            onClick={() => router.back()}
+            className="bg-gray-600 px-4 py-2 rounded-lg hover:bg-gray-700"
+          >
+            Salir
           </button>
         </div>
       </header>
