@@ -7,6 +7,7 @@ export default function CreateVideo() {
   const { data: session } = useSession();
   const router = useRouter();
   const [videoFile, setVideoFile] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const handleFileChange = (e) => {
     setVideoFile(e.target.files[0]);
@@ -14,17 +15,18 @@ export default function CreateVideo() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!videoFile) {
       alert("Por favor selecciona un archivo de video antes de procesar.");
       return;
     }
 
+    setLoading(true);
     const formData = new FormData();
     formData.append("video", videoFile);
 
     try {
-      const res = await fetch("http://157.180.88.215:4000/upload-video", {
+      // Aquí usamos el proxy de Next.js
+      const res = await fetch("/api/upload-video", {
         method: "POST",
         body: formData,
       });
@@ -37,6 +39,8 @@ export default function CreateVideo() {
     } catch (error) {
       console.error("Error subiendo el archivo:", error);
       alert("Error al enviar el video. Revisa la consola.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -77,7 +81,6 @@ export default function CreateVideo() {
         onSubmit={handleSubmit}
         className="flex flex-col gap-6 items-center"
       >
-        {/* Recuadro de subida */}
         <label
           htmlFor="videoFile"
           className="w-full max-w-lg h-40 border-2 border-dashed border-gray-500 flex flex-col items-center justify-center cursor-pointer hover:border-green-500 rounded-lg"
@@ -97,12 +100,14 @@ export default function CreateVideo() {
           )}
         </label>
 
-        {/* Botón procesar */}
         <button
           type="submit"
-          className="bg-green-600 px-6 py-3 rounded-lg hover:bg-green-700 transition"
+          disabled={loading}
+          className={`bg-green-600 px-6 py-3 rounded-lg transition ${
+            loading ? "opacity-50 cursor-not-allowed" : "hover:bg-green-700"
+          }`}
         >
-          Procesar
+          {loading ? "Procesando..." : "Procesar"}
         </button>
       </form>
     </div>
