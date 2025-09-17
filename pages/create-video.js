@@ -1,35 +1,51 @@
 // pages/create-video.js
-import { useState } from "react"
-import { useSession, signOut } from "next-auth/react"
-import { useRouter } from "next/router"
+import { useState } from "react";
+import { useSession, signOut } from "next-auth/react";
+import { useRouter } from "next/router";
 
 export default function CreateVideo() {
-  const { data: session } = useSession()
-  const router = useRouter()
-  const [videoFile, setVideoFile] = useState(null)
+  const { data: session } = useSession();
+  const router = useRouter();
+  const [videoFile, setVideoFile] = useState(null);
 
   const handleFileChange = (e) => {
-    setVideoFile(e.target.files[0])
-  }
+    setVideoFile(e.target.files[0]);
+  };
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
     if (!videoFile) {
-      alert("Por favor selecciona un archivo de video antes de procesar.")
-      return
+      alert("Por favor selecciona un archivo de video antes de procesar.");
+      return;
     }
 
-    console.log("Archivo de video listo para enviar:", videoFile)
-    // Aquí iría fetch/axios al backend para procesar el video
-  }
+    const formData = new FormData();
+    formData.append("video", videoFile);
+
+    try {
+      const res = await fetch("http://157.180.88.215:4000/upload-video", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error("Error en la subida del video");
+
+      const data = await res.json();
+      console.log("Respuesta del servidor:", data);
+      alert("Video enviado correctamente al servidor");
+    } catch (error) {
+      console.error("Error subiendo el archivo:", error);
+      alert("Error al enviar el video. Revisa la consola.");
+    }
+  };
 
   if (!session) {
     return (
       <div className="flex items-center justify-center min-h-screen text-white bg-black">
         <p>No has iniciado sesión.</p>
       </div>
-    )
+    );
   }
 
   return (
@@ -37,7 +53,11 @@ export default function CreateVideo() {
       <header className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">Subir y procesar Video</h1>
         <div className="flex items-center gap-4">
-          <img src={session.user.image} alt={session.user.name} className="w-10 h-10 rounded-full" />
+          <img
+            src={session.user.image}
+            alt={session.user.name}
+            className="w-10 h-10 rounded-full"
+          />
           <button
             onClick={() => signOut()}
             className="bg-red-500 px-4 py-2 rounded-lg hover:bg-red-600"
@@ -53,7 +73,10 @@ export default function CreateVideo() {
         </div>
       </header>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-6 items-center">
+      <form
+        onSubmit={handleSubmit}
+        className="flex flex-col gap-6 items-center"
+      >
         {/* Recuadro de subida */}
         <label
           htmlFor="videoFile"
@@ -83,5 +106,5 @@ export default function CreateVideo() {
         </button>
       </form>
     </div>
-  )
+  );
 }
