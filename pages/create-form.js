@@ -99,7 +99,6 @@ export default function CreateForm() {
         </div>
       </header>
 
-      {/* Formulario completo */}
       <form onSubmit={handleSubmit} className="flex flex-col gap-6">
         {/* 1️⃣ Extraer info */}
         <div className="border p-4 rounded-lg">
@@ -159,15 +158,188 @@ export default function CreateForm() {
         <div className="border p-4 rounded-lg">
           <h2 className="text-xl font-semibold mb-2">2️⃣ Partes visuales</h2>
 
-          {/* Aquí se mantienen todos los campos que tenías... */}
-          {/* ...titleText, titleColor, mainColors, referenceImages, emojis, format, clickbaitLevel, numFaces, visualElements, additionalText */}
+          <label className="flex gap-2 items-center">
+            <input type="checkbox" name="titleText" checked={enabledFields.titleText} onChange={handleChange} />
+            Texto en la miniatura
+          </label>
+          {enabledFields.titleText && (
+            <input
+              type="text"
+              name="titleText"
+              placeholder="Ejemplo: ¡No creerás lo que pasó!"
+              className="p-2 w-full rounded bg-gray-800"
+              value={formData.titleText}
+              onChange={handleChange}
+            />
+          )}
+
+          <label className="flex gap-2 items-center mt-3">
+            <input type="checkbox" name="titleColor" checked={enabledFields.titleColor} onChange={handleChange} />
+            Color del texto
+          </label>
+          {enabledFields.titleColor && (
+            <input type="color" name="titleColor" value={formData.titleColor} onChange={handleChange} />
+          )}
+
+          <label className="flex gap-2 items-center mt-3">
+            <input type="checkbox" name="mainColors" checked={enabledFields.mainColors} onChange={handleChange} />
+            Colores principales
+          </label>
+          {enabledFields.mainColors && (
+            <input
+              type="text"
+              name="mainColors"
+              placeholder="Ejemplo: #FF0000, #00FF00"
+              className="p-2 w-full rounded bg-gray-800"
+              value={formData.mainColors}
+              onChange={handleChange}
+            />
+          )}
+
+          <label className="flex gap-2 items-center mt-3">
+            <input type="checkbox" name="referenceImages" checked={enabledFields.referenceImages} onChange={handleChange} />
+            Imágenes de referencia
+          </label>
+          {enabledFields.referenceImages && <input type="file" name="referenceImages" accept="image/*" multiple onChange={handleChange} />}
+
+          <label className="flex gap-2 items-center mt-3">
+            <input type="checkbox" name="emojis" checked={enabledFields.emojis} onChange={handleChange} />
+            Emojis o stickers
+          </label>
+          {enabledFields.emojis && (
+            <input
+              type="text"
+              name="emojis"
+              placeholder="Ejemplo: 😂🔥🎮"
+              className="p-2 w-full rounded bg-gray-800"
+              value={formData.emojis}
+              onChange={handleChange}
+            />
+          )}
+
+          <label className="flex gap-2 items-center mt-3">
+            <input type="checkbox" name="format" checked={enabledFields.format} onChange={handleChange} />
+            Formato
+          </label>
+          {enabledFields.format && (
+            <select name="format" value={formData.format} onChange={handleChange} className="p-2 rounded bg-gray-800">
+              <option value="16:9">16:9 (YouTube)</option>
+              <option value="1:1">1:1 (Instagram)</option>
+              <option value="9:16">9:16 (Shorts/TikTok)</option>
+            </select>
+          )}
+
+          <label className="flex gap-2 items-center mt-3">
+            <input type="checkbox" name="clickbaitLevel" checked={enabledFields.clickbaitLevel} onChange={handleChange} />
+            Nivel de clickbait
+          </label>
+          {enabledFields.clickbaitLevel && (
+            <input
+              type="range"
+              min="0"
+              max="100"
+              name="clickbaitLevel"
+              value={formData.clickbaitLevel}
+              onChange={handleChange}
+            />
+          )}
+
+          <label className="flex gap-2 items-center mt-3">
+            <input type="checkbox" name="numFaces" checked={enabledFields.numFaces} onChange={handleChange} />
+            Número de caras
+          </label>
+          {enabledFields.numFaces && (
+            <input
+              type="number"
+              min="0"
+              max="10"
+              name="numFaces"
+              className="p-2 rounded bg-gray-800"
+              value={formData.numFaces}
+              onChange={handleChange}
+            />
+          )}
+
+          <label className="flex gap-2 items-center mt-3">
+            <input type="checkbox" name="visualElements" checked={enabledFields.visualElements} onChange={handleChange} />
+            Elementos visuales
+          </label>
+          {enabledFields.visualElements && (
+            <input
+              type="text"
+              name="visualElements"
+              placeholder="Ejemplo: rayos, flechas, círculos"
+              className="p-2 w-full rounded bg-gray-800"
+              value={formData.visualElements}
+              onChange={handleChange}
+            />
+          )}
+
+          <label className="flex gap-2 items-center mt-3">
+            <input type="checkbox" name="additionalText" checked={enabledFields.additionalText} onChange={handleChange} />
+            Texto adicional
+          </label>
+          {enabledFields.additionalText && (
+            <textarea
+              name="additionalText"
+              placeholder="Escribe frases o textos secundarios..."
+              className="p-2 w-full rounded bg-gray-800"
+              value={formData.additionalText}
+              onChange={handleChange}
+            />
+          )}
         </div>
 
         {/* 3️⃣ Puntos adicionales */}
         <div className="border p-4 rounded-lg">
           <h2 className="text-xl font-semibold mb-2">3️⃣ Puntos adicionales</h2>
 
-          {/* Aquí se mantienen numResults, polarize y template */}
+          <label className="flex gap-2 items-center">
+            <input type="checkbox" name="numResults" checked={enabledFields.numResults} onChange={handleChange} />
+            Número de miniaturas a generar
+          </label>
+          {enabledFields.numResults && (
+            <input
+              type="number"
+              min="1"
+              max="20"
+              name="numResults"
+              className="p-2 rounded bg-gray-800"
+              value={formData.numResults}
+              onChange={handleChange}
+            />
+          )}
+
+          <label className="flex gap-2 items-center mt-3">
+            <input type="checkbox" name="polarize" checked={enabledFields.polarize} onChange={handleChange} />
+            Polarización de resultados
+          </label>
+          {enabledFields.polarize && (
+            <label className="flex gap-2 items-center">
+              <input
+                type="checkbox"
+                name="polarize"
+                checked={formData.polarize}
+                onChange={handleChange}
+              />
+              Generar variantes muy diferentes
+            </label>
+          )}
+
+          <label className="flex gap-2 items-center mt-3">
+            <input type="checkbox" name="template" checked={enabledFields.template} onChange={handleChange} />
+            Plantilla base
+          </label>
+          {enabledFields.template && (
+            <input
+              type="text"
+              name="template"
+              placeholder="Ejemplo: Plantilla inspirada en MrBeast"
+              className="p-2 w-full rounded bg-gray-800"
+              value={formData.template}
+              onChange={handleChange}
+            />
+          )}
         </div>
 
         <button
