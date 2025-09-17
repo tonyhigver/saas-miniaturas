@@ -15,29 +15,28 @@ export default function CreateVideo() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!videoFile) {
-      alert("Por favor selecciona un archivo de video antes de procesar.");
-      return;
-    }
+    if (!videoFile) return alert("Selecciona un archivo de video");
 
     setLoading(true);
-    const formData = new FormData();
-    formData.append("video", videoFile);
 
     try {
-      // Aquí usamos el proxy de Next.js
+      // Enviamos directamente el archivo como body al proxy
       const res = await fetch("/api/upload-video", {
         method: "POST",
-        body: formData,
+        body: videoFile,
+        headers: {
+          "x-file-name": videoFile.name,
+          "content-type": videoFile.type,
+        },
       });
 
-      if (!res.ok) throw new Error("Error en la subida del video");
+      if (!res.ok) throw new Error("Error subiendo el video");
 
       const data = await res.json();
       console.log("Respuesta del servidor:", data);
       alert("Video enviado correctamente al servidor");
     } catch (error) {
-      console.error("Error subiendo el archivo:", error);
+      console.error("Error al subir el archivo:", error);
       alert("Error al enviar el video. Revisa la consola.");
     } finally {
       setLoading(false);
