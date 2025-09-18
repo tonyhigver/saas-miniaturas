@@ -65,7 +65,7 @@ export default function CreateForm() {
 
     const fd = new FormData();
 
-    // ⬅ Envío TODOS los campos y archivos, sin depender de enabledFields
+    // ⬅ Enviar TODOS los campos, sin depender de enabledFields
     for (const key in formData) {
       const value = formData[key];
       if (value instanceof FileList) {
@@ -79,9 +79,9 @@ export default function CreateForm() {
       }
     }
 
-    // 🔍 LOG: Ver todo lo que se envía
+    // 🔍 LOG: Depurar datos que se envían al backend
     for (let pair of fd.entries()) {
-      console.log("🟢 Enviando desde el cliente:", pair[0], pair[1]);
+      console.log("➡ Enviando al API:", pair[0], pair[1]);
     }
 
     try {
