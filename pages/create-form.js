@@ -5,9 +5,8 @@ import { useRouter } from "next/router"
 
 export default function CreateForm() {
   const { data: session } = useSession()
-  const router = useRouter() // Para navegación al salir
+  const router = useRouter()
 
-  // Estado para todos los valores
   const [formData, setFormData] = useState({
     description: "",
     category: "",
@@ -28,7 +27,6 @@ export default function CreateForm() {
     template: "",
   })
 
-  // Estado para activar/desactivar cada campo
   const [enabledFields, setEnabledFields] = useState({
     description: false,
     category: false,
@@ -49,7 +47,6 @@ export default function CreateForm() {
     template: false,
   })
 
-  // Control de cambios
   const handleChange = (e) => {
     const { name, value, type, checked, files } = e.target
     if (type === "file") {
@@ -63,19 +60,36 @@ export default function CreateForm() {
     }
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
 
-    // Filtrar solo los campos activos
-    const activeData = {}
+    const fd = new FormData()
+
     for (const key in formData) {
       if (enabledFields[key]) {
-        activeData[key] = formData[key]
+        if (formData[key] instanceof FileList) {
+          for (let i = 0; i < formData[key].length; i++) {
+            fd.append(key, formData[key][i])
+          }
+        } else {
+          fd.append(key, formData[key])
+        }
       }
     }
 
-    console.log("Datos enviados al backend:", activeData)
-    // Aquí iría fetch/axios para mandar los datos a tu backend
+    try {
+      const res = await fetch("/api/create-thumbnail", {
+        method: "POST",
+        body: fd,
+      })
+
+      const data = await res.json()
+      console.log("Respuesta del servidor:", data)
+      alert("Miniaturas generadas correctamente. Revisa consola.")
+    } catch (err) {
+      console.error("Error enviando formulario:", err)
+      alert("Error al enviar los datos")
+    }
   }
 
   if (!session) {
@@ -91,7 +105,11 @@ export default function CreateForm() {
       <header className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">Crear Miniatura con Formulario</h1>
         <div className="flex items-center gap-4">
-          <img src={session.user.image} alt={session.user.name} className="w-10 h-10 rounded-full" />
+          <img
+            src={session.user.image}
+            alt={session.user.name}
+            className="w-10 h-10 rounded-full"
+          />
           <button
             onClick={() => signOut()}
             className="bg-red-500 px-4 py-2 rounded-lg hover:bg-red-600"
@@ -113,7 +131,12 @@ export default function CreateForm() {
           <h2 className="text-xl font-semibold mb-2">1️⃣ Extraer información</h2>
 
           <label className="flex gap-2 items-center">
-            <input type="checkbox" name="description" checked={enabledFields.description} onChange={handleChange} />
+            <input
+              type="checkbox"
+              name="description"
+              checked={enabledFields.description}
+              onChange={handleChange}
+            />
             Prompt / Descripción de la miniatura
           </label>
           {enabledFields.description && (
@@ -128,11 +151,21 @@ export default function CreateForm() {
           )}
 
           <label className="flex gap-2 items-center mt-3">
-            <input type="checkbox" name="category" checked={enabledFields.category} onChange={handleChange} />
+            <input
+              type="checkbox"
+              name="category"
+              checked={enabledFields.category}
+              onChange={handleChange}
+            />
             Categoría
           </label>
           {enabledFields.category && (
-            <select name="category" value={formData.category} onChange={handleChange} className="p-2 rounded bg-gray-800">
+            <select
+              name="category"
+              value={formData.category}
+              onChange={handleChange}
+              className="p-2 rounded bg-gray-800"
+            >
               <option value="">Selecciona</option>
               <option value="Gaming">Gaming</option>
               <option value="Tutorial">Tutorial</option>
@@ -142,13 +175,30 @@ export default function CreateForm() {
           )}
 
           <label className="flex gap-2 items-center mt-3">
-            <input type="checkbox" name="videoFile" checked={enabledFields.videoFile} onChange={handleChange} />
+            <input
+              type="checkbox"
+              name="videoFile"
+              checked={enabledFields.videoFile}
+              onChange={handleChange}
+            />
             Subir video para analizar plot
           </label>
-          {enabledFields.videoFile && <input type="file" name="videoFile" accept="video/*" onChange={handleChange} />}
+          {enabledFields.videoFile && (
+            <input
+              type="file"
+              name="videoFile"
+              accept="video/*"
+              onChange={handleChange}
+            />
+          )}
 
           <label className="flex gap-2 items-center mt-3">
-            <input type="checkbox" name="videoPlot" checked={enabledFields.videoPlot} onChange={handleChange} />
+            <input
+              type="checkbox"
+              name="videoPlot"
+              checked={enabledFields.videoPlot}
+              onChange={handleChange}
+            />
             Escribir plot del video
           </label>
           {enabledFields.videoPlot && (
@@ -167,7 +217,12 @@ export default function CreateForm() {
           <h2 className="text-xl font-semibold mb-2">2️⃣ Partes visuales</h2>
 
           <label className="flex gap-2 items-center">
-            <input type="checkbox" name="titleText" checked={enabledFields.titleText} onChange={handleChange} />
+            <input
+              type="checkbox"
+              name="titleText"
+              checked={enabledFields.titleText}
+              onChange={handleChange}
+            />
             Texto en la miniatura
           </label>
           {enabledFields.titleText && (
@@ -182,15 +237,30 @@ export default function CreateForm() {
           )}
 
           <label className="flex gap-2 items-center mt-3">
-            <input type="checkbox" name="titleColor" checked={enabledFields.titleColor} onChange={handleChange} />
+            <input
+              type="checkbox"
+              name="titleColor"
+              checked={enabledFields.titleColor}
+              onChange={handleChange}
+            />
             Color del texto
           </label>
           {enabledFields.titleColor && (
-            <input type="color" name="titleColor" value={formData.titleColor} onChange={handleChange} />
+            <input
+              type="color"
+              name="titleColor"
+              value={formData.titleColor}
+              onChange={handleChange}
+            />
           )}
 
           <label className="flex gap-2 items-center mt-3">
-            <input type="checkbox" name="mainColors" checked={enabledFields.mainColors} onChange={handleChange} />
+            <input
+              type="checkbox"
+              name="mainColors"
+              checked={enabledFields.mainColors}
+              onChange={handleChange}
+            />
             Colores principales
           </label>
           {enabledFields.mainColors && (
@@ -205,13 +275,31 @@ export default function CreateForm() {
           )}
 
           <label className="flex gap-2 items-center mt-3">
-            <input type="checkbox" name="referenceImages" checked={enabledFields.referenceImages} onChange={handleChange} />
+            <input
+              type="checkbox"
+              name="referenceImages"
+              checked={enabledFields.referenceImages}
+              onChange={handleChange}
+            />
             Imágenes de referencia
           </label>
-          {enabledFields.referenceImages && <input type="file" name="referenceImages" accept="image/*" multiple onChange={handleChange} />}
+          {enabledFields.referenceImages && (
+            <input
+              type="file"
+              name="referenceImages"
+              accept="image/*"
+              multiple
+              onChange={handleChange}
+            />
+          )}
 
           <label className="flex gap-2 items-center mt-3">
-            <input type="checkbox" name="emojis" checked={enabledFields.emojis} onChange={handleChange} />
+            <input
+              type="checkbox"
+              name="emojis"
+              checked={enabledFields.emojis}
+              onChange={handleChange}
+            />
             Emojis o stickers
           </label>
           {enabledFields.emojis && (
@@ -226,11 +314,21 @@ export default function CreateForm() {
           )}
 
           <label className="flex gap-2 items-center mt-3">
-            <input type="checkbox" name="format" checked={enabledFields.format} onChange={handleChange} />
+            <input
+              type="checkbox"
+              name="format"
+              checked={enabledFields.format}
+              onChange={handleChange}
+            />
             Formato
           </label>
           {enabledFields.format && (
-            <select name="format" value={formData.format} onChange={handleChange} className="p-2 rounded bg-gray-800">
+            <select
+              name="format"
+              value={formData.format}
+              onChange={handleChange}
+              className="p-2 rounded bg-gray-800"
+            >
               <option value="16:9">16:9 (YouTube)</option>
               <option value="1:1">1:1 (Instagram)</option>
               <option value="9:16">9:16 (Shorts/TikTok)</option>
@@ -238,7 +336,12 @@ export default function CreateForm() {
           )}
 
           <label className="flex gap-2 items-center mt-3">
-            <input type="checkbox" name="clickbaitLevel" checked={enabledFields.clickbaitLevel} onChange={handleChange} />
+            <input
+              type="checkbox"
+              name="clickbaitLevel"
+              checked={enabledFields.clickbaitLevel}
+              onChange={handleChange}
+            />
             Nivel de clickbait
           </label>
           {enabledFields.clickbaitLevel && (
@@ -253,7 +356,12 @@ export default function CreateForm() {
           )}
 
           <label className="flex gap-2 items-center mt-3">
-            <input type="checkbox" name="numFaces" checked={enabledFields.numFaces} onChange={handleChange} />
+            <input
+              type="checkbox"
+              name="numFaces"
+              checked={enabledFields.numFaces}
+              onChange={handleChange}
+            />
             Número de caras
           </label>
           {enabledFields.numFaces && (
@@ -269,7 +377,12 @@ export default function CreateForm() {
           )}
 
           <label className="flex gap-2 items-center mt-3">
-            <input type="checkbox" name="visualElements" checked={enabledFields.visualElements} onChange={handleChange} />
+            <input
+              type="checkbox"
+              name="visualElements"
+              checked={enabledFields.visualElements}
+              onChange={handleChange}
+            />
             Elementos visuales
           </label>
           {enabledFields.visualElements && (
@@ -284,7 +397,12 @@ export default function CreateForm() {
           )}
 
           <label className="flex gap-2 items-center mt-3">
-            <input type="checkbox" name="additionalText" checked={enabledFields.additionalText} onChange={handleChange} />
+            <input
+              type="checkbox"
+              name="additionalText"
+              checked={enabledFields.additionalText}
+              onChange={handleChange}
+            />
             Texto adicional
           </label>
           {enabledFields.additionalText && (
@@ -303,7 +421,12 @@ export default function CreateForm() {
           <h2 className="text-xl font-semibold mb-2">3️⃣ Puntos adicionales</h2>
 
           <label className="flex gap-2 items-center">
-            <input type="checkbox" name="numResults" checked={enabledFields.numResults} onChange={handleChange} />
+            <input
+              type="checkbox"
+              name="numResults"
+              checked={enabledFields.numResults}
+              onChange={handleChange}
+            />
             Número de miniaturas a generar
           </label>
           {enabledFields.numResults && (
@@ -319,7 +442,12 @@ export default function CreateForm() {
           )}
 
           <label className="flex gap-2 items-center mt-3">
-            <input type="checkbox" name="polarize" checked={enabledFields.polarize} onChange={handleChange} />
+            <input
+              type="checkbox"
+              name="polarize"
+              checked={enabledFields.polarize}
+              onChange={handleChange}
+            />
             Polarización de resultados
           </label>
           {enabledFields.polarize && (
@@ -335,7 +463,12 @@ export default function CreateForm() {
           )}
 
           <label className="flex gap-2 items-center mt-3">
-            <input type="checkbox" name="template" checked={enabledFields.template} onChange={handleChange} />
+            <input
+              type="checkbox"
+              name="template"
+              checked={enabledFields.template}
+              onChange={handleChange}
+            />
             Plantilla base
           </label>
           {enabledFields.template && (
