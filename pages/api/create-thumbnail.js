@@ -13,13 +13,14 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Método no permitido" });
   }
 
+  // Configurar formidable
   const form = formidable({
-    multiples: true,
-    uploadDir: "/tmp",
-    keepExtensions: true,
+    multiples: true,       // Permitir múltiples archivos
+    uploadDir: "/tmp",     // Directorio temporal para los archivos
+    keepExtensions: true,  // Mantener extensión de archivos
   });
 
-  // ⬇ Form parse envuelto en Promise
+  // Promesa para parsear el form
   const parseForm = (req) =>
     new Promise((resolve, reject) => {
       form.parse(req, (err, fields, files) => {
@@ -31,8 +32,9 @@ export default async function handler(req, res) {
   try {
     const { fields, files } = await parseForm(req);
 
-    console.log("📩 Campos recibidos en Vercel:", fields);
-    console.log("📂 Archivos recibidos en Vercel:", files);
+    // 🔍 Logs de depuración
+    console.log("📩 Campos recibidos:", fields);
+    console.log("📂 Archivos recibidos:", files);
 
     // ----- REENVÍO AL BACKEND HETZNER -----
     const { FormData } = await import("formdata-node");
@@ -69,11 +71,12 @@ export default async function handler(req, res) {
       }
     }
 
-    // 🔍 Log para ver lo que se reenvía realmente a Hetzner
+    // 🔍 Log de lo que se reenvía
     for (let pair of formData.entries()) {
-      console.log("🔄 Reenviando desde Vercel:", pair[0], pair[1]);
+      console.log("🔄 Reenviando al backend:", pair[0], pair[1]);
     }
 
+    // Enviar al backend Hetzner
     const backendRes = await fetch(
       "http://157.180.88.215:4000/create-thumbnail",
       {
