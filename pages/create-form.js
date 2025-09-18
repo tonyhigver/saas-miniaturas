@@ -28,7 +28,7 @@ export default function CreateForm() {
     template: "",
   });
 
-  // Estado para mostrar/ocultar campos
+  // Estado para habilitar/deshabilitar campos
   const [enabledFields, setEnabledFields] = useState({
     description: false,
     category: false,
@@ -56,36 +56,36 @@ export default function CreateForm() {
       // Checkbox que habilita/deshabilita campos
       setEnabledFields((prev) => ({ ...prev, [name]: checked }));
     } else if (type === "checkbox") {
-      // Checkbox normal que forma parte del formData
+      // Checkbox que forma parte de los datos a enviar
       setFormData((prev) => ({ ...prev, [name]: checked }));
     } else if (type === "file") {
-      // Archivos
       setFormData((prev) => ({ ...prev, [name]: files }));
     } else {
-      // Texto, select, number, range, color, etc.
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     const fd = new FormData();
 
+    // Solo enviar campos habilitados
     for (const key in formData) {
-      const value = formData[key];
-      if (value instanceof FileList) {
-        for (let i = 0; i < value.length; i++) {
-          fd.append(key, value[i], value[i].name);
+      if (enabledFields[key]) {
+        const value = formData[key];
+        if (value instanceof FileList) {
+          for (let i = 0; i < value.length; i++) {
+            fd.append(key, value[i], value[i].name);
+          }
+        } else if (Array.isArray(value)) {
+          value.forEach((v) => fd.append(key, v));
+        } else {
+          fd.append(key, value);
         }
-      } else if (Array.isArray(value)) {
-        value.forEach((v) => fd.append(key, v));
-      } else {
-        fd.append(key, value);
       }
     }
 
-    // Depuración de los datos enviados
+    // Depuración
     for (let pair of fd.entries()) {
       console.log("➡ Enviando al API:", pair[0], pair[1]);
     }
@@ -139,11 +139,11 @@ export default function CreateForm() {
       </header>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-        {/* 1️⃣ Extraer info */}
+        {/* 1️⃣ Extraer información */}
         <div className="border p-4 rounded-lg">
           <h2 className="text-xl font-semibold mb-2">1️⃣ Extraer información</h2>
 
-          {/* Description */}
+          {/** Description */}
           <label className="flex gap-2 items-center">
             <input
               type="checkbox"
@@ -164,7 +164,7 @@ export default function CreateForm() {
             />
           )}
 
-          {/* Category */}
+          {/** Category */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -189,7 +189,7 @@ export default function CreateForm() {
             </select>
           )}
 
-          {/* Video File */}
+          {/** Video File */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -208,7 +208,7 @@ export default function CreateForm() {
             />
           )}
 
-          {/* Video Plot */}
+          {/** Video Plot */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -233,7 +233,7 @@ export default function CreateForm() {
         <div className="border p-4 rounded-lg">
           <h2 className="text-xl font-semibold mb-2">2️⃣ Partes visuales</h2>
 
-          {/* Title Text */}
+          {/** Title Text */}
           <label className="flex gap-2 items-center">
             <input
               type="checkbox"
@@ -254,7 +254,7 @@ export default function CreateForm() {
             />
           )}
 
-          {/* Title Color */}
+          {/** Title Color */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -273,7 +273,7 @@ export default function CreateForm() {
             />
           )}
 
-          {/* Main Colors */}
+          {/** Main Colors */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -294,7 +294,7 @@ export default function CreateForm() {
             />
           )}
 
-          {/* Reference Images */}
+          {/** Reference Images */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -314,7 +314,7 @@ export default function CreateForm() {
             />
           )}
 
-          {/* Emojis */}
+          {/** Emojis */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -335,7 +335,7 @@ export default function CreateForm() {
             />
           )}
 
-          {/* Format */}
+          {/** Format */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -358,7 +358,7 @@ export default function CreateForm() {
             </select>
           )}
 
-          {/* Clickbait Level */}
+          {/** Clickbait Level */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -379,7 +379,7 @@ export default function CreateForm() {
             />
           )}
 
-          {/* Num Faces */}
+          {/** Num Faces */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -401,7 +401,7 @@ export default function CreateForm() {
             />
           )}
 
-          {/* Visual Elements */}
+          {/** Visual Elements */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -422,7 +422,7 @@ export default function CreateForm() {
             />
           )}
 
-          {/* Additional Text */}
+          {/** Additional Text */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -447,7 +447,7 @@ export default function CreateForm() {
         <div className="border p-4 rounded-lg">
           <h2 className="text-xl font-semibold mb-2">3️⃣ Puntos adicionales</h2>
 
-          {/* Num Results */}
+          {/** Num Results */}
           <label className="flex gap-2 items-center">
             <input
               type="checkbox"
@@ -469,7 +469,7 @@ export default function CreateForm() {
             />
           )}
 
-          {/* Polarize */}
+          {/** Polarize */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -491,7 +491,7 @@ export default function CreateForm() {
             </label>
           )}
 
-          {/* Template */}
+          {/** Template */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
