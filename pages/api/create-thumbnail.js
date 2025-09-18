@@ -1,7 +1,5 @@
 // pages/api/create-thumbnail.js
 import formidable from "formidable";
-import fs from "fs";
-import os from "os";
 import { FormData } from "formdata-node";
 import fetch from "node-fetch";
 
@@ -15,59 +13,35 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Método no permitido" });
   }
 
-  // Configuración de formidable
+  // Configuración de formidable solo para texto
   const form = formidable({
-    multiples: true,              // Permitir múltiples archivos
-    uploadDir: os.tmpdir(),       // Directorio temporal seguro
-    keepExtensions: true,         // Mantener extensión de archivos
-    maxFileSize: 200 * 1024 * 1024, // 200MB máximo por archivo
+    multiples: false, // No se esperan archivos
   });
 
   // Promesa para parsear el form
   const parseForm = (req) =>
     new Promise((resolve, reject) => {
-      form.parse(req, (err, fields, files) => {
+      form.parse(req, (err, fields) => {
         if (err) reject(err);
-        else resolve({ fields, files });
+        else resolve(fields);
       });
     });
 
   try {
-    const { fields, files } = await parseForm(req);
+    const fields = await parseForm(req);
 
     // 🔍 Depuración: mostrar qué se recibe
     console.log("📩 Campos recibidos:", fields || {});
-    if (files && Object.keys(files).length > 0) {
-      console.log("📂 Archivos recibidos:", files);
-    } else {
-      console.log("📂 No se subieron archivos.");
-    }
 
     // ----- REENVÍO AL BACKEND -----
     const formData = new FormData();
 
-    // Agregar campos de texto
+    // Agregar solo campos de texto
     for (const key in fields) {
       if (Array.isArray(fields[key])) {
         fields[key].forEach((val) => formData.append(key, val));
       } else {
         formData.append(key, fields[key]);
-      }
-    }
-
-    // Agregar archivos si existen
-    if (files) {
-      for (const key in files) {
-        const file = files[key];
-        if (!file) continue;
-
-        if (Array.isArray(file)) {
-          file.forEach((f) =>
-            formData.append(key, fs.createReadStream(f.filepath), f.originalFilename)
-          );
-        } else {
-          formData.append(key, fs.createReadStream(file.filepath), file.originalFilename);
-        }
       }
     }
 

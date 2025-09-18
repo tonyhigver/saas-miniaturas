@@ -11,12 +11,10 @@ export default function CreateForm() {
   const [formData, setFormData] = useState({
     description: "",
     category: "",
-    videoFile: null,
     videoPlot: "",
     titleText: "",
     titleColor: "#FFFFFF",
     mainColors: "",
-    referenceImages: null,
     emojis: "",
     format: "16:9",
     clickbaitLevel: 50,
@@ -32,12 +30,10 @@ export default function CreateForm() {
   const [enabledFields, setEnabledFields] = useState({
     description: false,
     category: false,
-    videoFile: false,
     videoPlot: false,
     titleText: false,
     titleColor: false,
     mainColors: false,
-    referenceImages: false,
     emojis: false,
     format: false,
     clickbaitLevel: false,
@@ -50,7 +46,7 @@ export default function CreateForm() {
   });
 
   const handleChange = (e) => {
-    const { name, value, type, checked, files } = e.target;
+    const { name, value, type, checked } = e.target;
 
     if (type === "checkbox" && name in enabledFields) {
       // Checkbox que habilita/deshabilita campos
@@ -58,8 +54,6 @@ export default function CreateForm() {
     } else if (type === "checkbox") {
       // Checkbox que forma parte de los datos a enviar
       setFormData((prev) => ({ ...prev, [name]: checked }));
-    } else if (type === "file") {
-      setFormData((prev) => ({ ...prev, [name]: files }));
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
@@ -72,16 +66,7 @@ export default function CreateForm() {
     // Solo enviar campos habilitados
     for (const key in formData) {
       if (enabledFields[key]) {
-        const value = formData[key];
-        if (value instanceof FileList) {
-          for (let i = 0; i < value.length; i++) {
-            fd.append(key, value[i], value[i].name);
-          }
-        } else if (Array.isArray(value)) {
-          value.forEach((v) => fd.append(key, v));
-        } else {
-          fd.append(key, value);
-        }
+        fd.append(key, formData[key]);
       }
     }
 
@@ -143,7 +128,7 @@ export default function CreateForm() {
         <div className="border p-4 rounded-lg">
           <h2 className="text-xl font-semibold mb-2">1️⃣ Extraer información</h2>
 
-          {/** Description */}
+          {/* Description */}
           <label className="flex gap-2 items-center">
             <input
               type="checkbox"
@@ -164,7 +149,7 @@ export default function CreateForm() {
             />
           )}
 
-          {/** Category */}
+          {/* Category */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -189,26 +174,7 @@ export default function CreateForm() {
             </select>
           )}
 
-          {/** Video File */}
-          <label className="flex gap-2 items-center mt-3">
-            <input
-              type="checkbox"
-              name="videoFile"
-              checked={enabledFields.videoFile}
-              onChange={handleChange}
-            />
-            Subir video para analizar plot
-          </label>
-          {enabledFields.videoFile && (
-            <input
-              type="file"
-              name="videoFile"
-              accept="video/*"
-              onChange={handleChange}
-            />
-          )}
-
-          {/** Video Plot */}
+          {/* Video Plot */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -233,7 +199,7 @@ export default function CreateForm() {
         <div className="border p-4 rounded-lg">
           <h2 className="text-xl font-semibold mb-2">2️⃣ Partes visuales</h2>
 
-          {/** Title Text */}
+          {/* Title Text */}
           <label className="flex gap-2 items-center">
             <input
               type="checkbox"
@@ -254,7 +220,7 @@ export default function CreateForm() {
             />
           )}
 
-          {/** Title Color */}
+          {/* Title Color */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -273,7 +239,7 @@ export default function CreateForm() {
             />
           )}
 
-          {/** Main Colors */}
+          {/* Main Colors */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -294,27 +260,7 @@ export default function CreateForm() {
             />
           )}
 
-          {/** Reference Images */}
-          <label className="flex gap-2 items-center mt-3">
-            <input
-              type="checkbox"
-              name="referenceImages"
-              checked={enabledFields.referenceImages}
-              onChange={handleChange}
-            />
-            Imágenes de referencia
-          </label>
-          {enabledFields.referenceImages && (
-            <input
-              type="file"
-              name="referenceImages"
-              accept="image/*"
-              multiple
-              onChange={handleChange}
-            />
-          )}
-
-          {/** Emojis */}
+          {/* Emojis */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -334,31 +280,13 @@ export default function CreateForm() {
               onChange={handleChange}
             />
           )}
+        </div>
 
-          {/** Format */}
-          <label className="flex gap-2 items-center mt-3">
-            <input
-              type="checkbox"
-              name="format"
-              checked={enabledFields.format}
-              onChange={handleChange}
-            />
-            Formato
-          </label>
-          {enabledFields.format && (
-            <select
-              name="format"
-              value={formData.format}
-              onChange={handleChange}
-              className="p-2 rounded bg-gray-800"
-            >
-              <option value="16:9">16:9 (YouTube)</option>
-              <option value="1:1">1:1 (Instagram)</option>
-              <option value="9:16">9:16 (Shorts/TikTok)</option>
-            </select>
-          )}
+        {/* 3️⃣ Puntos adicionales */}
+        <div className="border p-4 rounded-lg">
+          <h2 className="text-xl font-semibold mb-2">3️⃣ Puntos adicionales</h2>
 
-          {/** Clickbait Level */}
+          {/* Clickbait Level */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -379,7 +307,7 @@ export default function CreateForm() {
             />
           )}
 
-          {/** Num Faces */}
+          {/* Num Faces */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -401,7 +329,7 @@ export default function CreateForm() {
             />
           )}
 
-          {/** Visual Elements */}
+          {/* Visual Elements */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -422,7 +350,7 @@ export default function CreateForm() {
             />
           )}
 
-          {/** Additional Text */}
+          {/* Additional Text */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -441,14 +369,9 @@ export default function CreateForm() {
               onChange={handleChange}
             />
           )}
-        </div>
 
-        {/* 3️⃣ Puntos adicionales */}
-        <div className="border p-4 rounded-lg">
-          <h2 className="text-xl font-semibold mb-2">3️⃣ Puntos adicionales</h2>
-
-          {/** Num Results */}
-          <label className="flex gap-2 items-center">
+          {/* Num Results */}
+          <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
               name="numResults"
@@ -469,7 +392,7 @@ export default function CreateForm() {
             />
           )}
 
-          {/** Polarize */}
+          {/* Polarize */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -479,19 +402,8 @@ export default function CreateForm() {
             />
             Polarización de resultados
           </label>
-          {enabledFields.polarize && (
-            <label className="flex gap-2 items-center">
-              <input
-                type="checkbox"
-                name="polarize"
-                checked={formData.polarize}
-                onChange={handleChange}
-              />
-              Generar variantes muy diferentes
-            </label>
-          )}
 
-          {/** Template */}
+          {/* Template */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
