@@ -7,7 +7,6 @@ export default function CreateForm() {
   const { data: session } = useSession();
   const router = useRouter();
 
-  // Estado de los campos del formulario
   const [formData, setFormData] = useState({
     description: "",
     category: "",
@@ -15,18 +14,14 @@ export default function CreateForm() {
     titleText: "",
     titleColor: "#FFFFFF",
     mainColors: "",
-    emojis: "",
     format: "16:9",
-    clickbaitLevel: 50,
     numFaces: 1,
     visualElements: "",
     additionalText: "",
     numResults: 3,
-    polarize: false,
     template: "",
   });
 
-  // Estado para habilitar/deshabilitar campos
   const [enabledFields, setEnabledFields] = useState({
     description: false,
     category: false,
@@ -34,14 +29,11 @@ export default function CreateForm() {
     titleText: false,
     titleColor: false,
     mainColors: false,
-    emojis: false,
     format: false,
-    clickbaitLevel: false,
     numFaces: false,
     visualElements: false,
     additionalText: false,
     numResults: false,
-    polarize: false,
     template: false,
   });
 
@@ -49,10 +41,8 @@ export default function CreateForm() {
     const { name, value, type, checked } = e.target;
 
     if (type === "checkbox" && name in enabledFields) {
-      // Checkbox que habilita/deshabilita campos
       setEnabledFields((prev) => ({ ...prev, [name]: checked }));
     } else if (type === "checkbox") {
-      // Checkbox que forma parte de los datos a enviar
       setFormData((prev) => ({ ...prev, [name]: checked }));
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
@@ -63,14 +53,12 @@ export default function CreateForm() {
     e.preventDefault();
     const fd = new FormData();
 
-    // Solo enviar campos habilitados
     for (const key in formData) {
       if (enabledFields[key]) {
         fd.append(key, formData[key]);
       }
     }
 
-    // Depuración
     for (let pair of fd.entries()) {
       console.log("➡ Enviando al API:", pair[0], pair[1]);
     }
@@ -128,7 +116,6 @@ export default function CreateForm() {
         <div className="border p-4 rounded-lg">
           <h2 className="text-xl font-semibold mb-2">1️⃣ Extraer información</h2>
 
-          {/* Description */}
           <label className="flex gap-2 items-center">
             <input
               type="checkbox"
@@ -149,7 +136,6 @@ export default function CreateForm() {
             />
           )}
 
-          {/* Category */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -174,7 +160,6 @@ export default function CreateForm() {
             </select>
           )}
 
-          {/* Video Plot */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -199,7 +184,6 @@ export default function CreateForm() {
         <div className="border p-4 rounded-lg">
           <h2 className="text-xl font-semibold mb-2">2️⃣ Partes visuales</h2>
 
-          {/* Title Text */}
           <label className="flex gap-2 items-center">
             <input
               type="checkbox"
@@ -220,7 +204,6 @@ export default function CreateForm() {
             />
           )}
 
-          {/* Title Color */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -239,7 +222,6 @@ export default function CreateForm() {
             />
           )}
 
-          {/* Main Colors */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -259,55 +241,12 @@ export default function CreateForm() {
               onChange={handleChange}
             />
           )}
-
-          {/* Emojis */}
-          <label className="flex gap-2 items-center mt-3">
-            <input
-              type="checkbox"
-              name="emojis"
-              checked={enabledFields.emojis}
-              onChange={handleChange}
-            />
-            Emojis o stickers
-          </label>
-          {enabledFields.emojis && (
-            <input
-              type="text"
-              name="emojis"
-              placeholder="Ejemplo: 😂🔥🎮"
-              className="p-2 w-full rounded bg-gray-800"
-              value={formData.emojis}
-              onChange={handleChange}
-            />
-          )}
         </div>
 
         {/* 3️⃣ Puntos adicionales */}
         <div className="border p-4 rounded-lg">
           <h2 className="text-xl font-semibold mb-2">3️⃣ Puntos adicionales</h2>
 
-          {/* Clickbait Level */}
-          <label className="flex gap-2 items-center mt-3">
-            <input
-              type="checkbox"
-              name="clickbaitLevel"
-              checked={enabledFields.clickbaitLevel}
-              onChange={handleChange}
-            />
-            Nivel de clickbait
-          </label>
-          {enabledFields.clickbaitLevel && (
-            <input
-              type="range"
-              min="0"
-              max="100"
-              name="clickbaitLevel"
-              value={formData.clickbaitLevel}
-              onChange={handleChange}
-            />
-          )}
-
-          {/* Num Faces */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -329,7 +268,6 @@ export default function CreateForm() {
             />
           )}
 
-          {/* Visual Elements */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -350,7 +288,6 @@ export default function CreateForm() {
             />
           )}
 
-          {/* Additional Text */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -370,7 +307,6 @@ export default function CreateForm() {
             />
           )}
 
-          {/* Num Results */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -392,18 +328,6 @@ export default function CreateForm() {
             />
           )}
 
-          {/* Polarize */}
-          <label className="flex gap-2 items-center mt-3">
-            <input
-              type="checkbox"
-              name="polarize"
-              checked={enabledFields.polarize}
-              onChange={handleChange}
-            />
-            Polarización de resultados
-          </label>
-
-          {/* Template */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
