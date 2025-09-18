@@ -15,12 +15,16 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Método no permitido" });
   }
 
-  // Configurar formidable con directorio temporal válido
+  // Configurar formidable con directorio temporal válido y límite de tamaño
   const form = formidable({
     multiples: true,              // Permitir múltiples archivos
-    uploadDir: os.tmpdir(),       // 🔹 Cambiado de "/tmp" a os.tmpdir()
-    keepExtensions: true,          // Mantener extensión de archivos
+    uploadDir: os.tmpdir(),       // Directorio temporal seguro en Vercel
+    keepExtensions: true,         // Mantener extensión de archivos
+    maxFileSize: 200 * 1024 * 1024, // 200MB máximo por archivo
   });
+
+  // Escuchar errores de formidable
+  form.on("error", (err) => console.error("Formidable error:", err));
 
   // Promesa para parsear el form
   const parseForm = (req) =>
@@ -34,7 +38,7 @@ export default async function handler(req, res) {
   try {
     const { fields, files } = await parseForm(req);
 
-    // 🔍 Logs de depuración
+    // 🔍 Logs de depuración para ver si formidable parseó correctamente
     console.log("📩 Campos recibidos:", fields);
     console.log("📂 Archivos recibidos:", files);
 
@@ -64,8 +68,8 @@ export default async function handler(req, res) {
       }
     }
 
-    // 🔍 Log de lo que se reenvía
-    for (const pair of formData.entries()) {
+    // 🔍 Log de lo que se reenvía al backend
+    for (let pair of formData.entries()) {
       console.log("🔄 Reenviando al backend:", pair[0], pair[1]);
     }
 
