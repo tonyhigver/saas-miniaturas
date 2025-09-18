@@ -1,11 +1,11 @@
 // pages/create-form.js
-import { useState } from "react"
-import { useSession, signOut } from "next-auth/react"
-import { useRouter } from "next/router"
+import { useState } from "react";
+import { useSession, signOut } from "next-auth/react";
+import { useRouter } from "next/router";
 
 export default function CreateForm() {
-  const { data: session } = useSession()
-  const router = useRouter()
+  const { data: session } = useSession();
+  const router = useRouter();
 
   const [formData, setFormData] = useState({
     description: "",
@@ -25,7 +25,7 @@ export default function CreateForm() {
     numResults: 3,
     polarize: false,
     template: "",
-  })
+  });
 
   const [enabledFields, setEnabledFields] = useState({
     description: false,
@@ -45,68 +45,66 @@ export default function CreateForm() {
     numResults: false,
     polarize: false,
     template: false,
-  })
+  });
 
   const handleChange = (e) => {
-    const { name, value, type, checked, files } = e.target
+    const { name, value, type, checked, files } = e.target;
     if (type === "file") {
-      setFormData((prev) => ({ ...prev, [name]: files }))
+      setFormData((prev) => ({ ...prev, [name]: files }));
     } else if (type === "checkbox" && name in enabledFields) {
-      setEnabledFields((prev) => ({ ...prev, [name]: checked }))
+      setEnabledFields((prev) => ({ ...prev, [name]: checked }));
     } else if (type === "checkbox") {
-      setFormData((prev) => ({ ...prev, [name]: checked }))
+      setFormData((prev) => ({ ...prev, [name]: checked }));
     } else {
-      setFormData((prev) => ({ ...prev, [name]: value }))
+      setFormData((prev) => ({ ...prev, [name]: value }));
     }
-  }
+  };
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
 
-    const fd = new FormData()
+    const fd = new FormData();
 
+    // ⬅ Envío TODOS los campos y archivos, sin depender de enabledFields
     for (const key in formData) {
-      if (!enabledFields[key]) continue
-
-      const value = formData[key]
-
+      const value = formData[key];
       if (value instanceof FileList) {
         for (let i = 0; i < value.length; i++) {
-          fd.append(key, value[i], value[i].name)
+          fd.append(key, value[i], value[i].name);
         }
       } else if (Array.isArray(value)) {
-        value.forEach((v) => fd.append(key, v))
+        value.forEach((v) => fd.append(key, v));
       } else {
-        fd.append(key, value)
+        fd.append(key, value);
       }
     }
 
-    // 🔍 LOG: Ver qué se está enviando al backend
+    // 🔍 LOG: Ver todo lo que se envía
     for (let pair of fd.entries()) {
-      console.log("🟢 Enviando desde el cliente:", pair[0], pair[1])
+      console.log("🟢 Enviando desde el cliente:", pair[0], pair[1]);
     }
 
     try {
       const res = await fetch("/api/create-thumbnail", {
         method: "POST",
         body: fd,
-      })
+      });
 
-      const data = await res.json()
-      console.log("Respuesta del servidor:", data)
-      alert("Miniaturas generadas correctamente. Revisa consola.")
+      const data = await res.json();
+      console.log("Respuesta del servidor:", data);
+      alert("Miniaturas generadas correctamente. Revisa consola.");
     } catch (err) {
-      console.error("Error enviando formulario:", err)
-      alert("Error al enviar los datos")
+      console.error("Error enviando formulario:", err);
+      alert("Error al enviar los datos");
     }
-  }
+  };
 
   if (!session) {
     return (
       <div className="flex items-center justify-center min-h-screen text-white bg-black">
         <p>No has iniciado sesión.</p>
       </div>
-    )
+    );
   }
 
   return (
@@ -500,5 +498,5 @@ export default function CreateForm() {
         </button>
       </form>
     </div>
-  )
+  );
 }
