@@ -15,16 +15,13 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Método no permitido" });
   }
 
-  // Configurar formidable con directorio temporal válido y límite de tamaño
+  // Configurar formidable
   const form = formidable({
     multiples: true,              // Permitir múltiples archivos
     uploadDir: os.tmpdir(),       // Directorio temporal seguro en Vercel
     keepExtensions: true,         // Mantener extensión de archivos
     maxFileSize: 200 * 1024 * 1024, // 200MB máximo por archivo
   });
-
-  // Escuchar errores de formidable
-  form.on("error", (err) => console.error("Formidable error:", err));
 
   // Promesa para parsear el form
   const parseForm = (req) =>
@@ -38,11 +35,11 @@ export default async function handler(req, res) {
   try {
     const { fields, files } = await parseForm(req);
 
-    // 🔍 Logs de depuración para ver si formidable parseó correctamente
+    // 🔍 Logs para depuración
     console.log("📩 Campos recibidos:", fields);
     console.log("📂 Archivos recibidos:", files);
 
-    // ----- REENVÍO AL BACKEND HETZNER -----
+    // ----- REENVÍO AL BACKEND (ejemplo Hetzner) -----
     const formData = new FormData();
 
     // Agregar campos de texto
@@ -73,7 +70,7 @@ export default async function handler(req, res) {
       console.log("🔄 Reenviando al backend:", pair[0], pair[1]);
     }
 
-    // Enviar al backend Hetzner
+    // Enviar al backend
     const backendRes = await fetch("http://157.180.88.215:4000/create-thumbnail", {
       method: "POST",
       body: formData,
@@ -82,11 +79,11 @@ export default async function handler(req, res) {
     const backendData = await backendRes.json();
 
     return res.status(200).json({
-      message: "Formulario reenviado al backend ✅",
+      message: "Formulario recibido y reenviado ✅",
       backendResponse: backendData,
     });
   } catch (error) {
-    console.error("❌ Error procesando y reenviando el formulario:", error);
+    console.error("❌ Error procesando el formulario:", error);
     return res.status(500).json({ error: "Error en el servidor" });
   }
 }
