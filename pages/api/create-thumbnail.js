@@ -13,15 +13,12 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Método no permitido" });
   }
 
-  // Configuración de formidable solo para texto (sin archivos)
-  const form = formidable({
-    multiples: false, // No esperamos archivos
-  });
+  // Configuración de formidable solo para campos de texto
+  const form = formidable({ multiples: false });
 
-  // Promesa para parsear el form
   const parseForm = (req) =>
     new Promise((resolve, reject) => {
-      // Log de cada campo recibido
+      // Depuración: mostrar cada campo recibido
       form.on("field", (name, value) => {
         console.log("🔹 Campo recibido:", name, value);
       });
@@ -43,26 +40,24 @@ export default async function handler(req, res) {
   try {
     const fields = await parseForm(req);
 
-    // ----- REENVÍO AL BACKEND -----
-    const formData = new FormData();
-
+    // Convertimos todo a JSON limpio antes de reenviar
+    const jsonPayload = {};
     for (const key in fields) {
-      if (Array.isArray(fields[key])) {
-        fields[key].forEach((val) => formData.append(key, val));
+      // Si es un array con un solo valor, convertir a string
+      if (Array.isArray(fields[key]) && fields[key].length === 1) {
+        jsonPayload[key] = fields[key][0];
       } else {
-        formData.append(key, fields[key]);
+        jsonPayload[key] = fields[key];
       }
     }
 
-    // Depuración: mostrar lo que se enviará al backend
-    for (let pair of formData.entries()) {
-      console.log("🔄 Reenviando al backend:", pair[0], pair[1]);
-    }
+    console.log("🔄 JSON a enviar al backend:", jsonPayload);
 
-    // Enviar al backend
+    // Enviar al backend como JSON
     const backendRes = await fetch("http://157.180.88.215:4000/create-thumbnail", {
       method: "POST",
-      body: formData,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(jsonPayload),
     });
 
     const backendData = await backendRes.json();
