@@ -40,7 +40,6 @@ export default async function handler(req, res) {
 
     // Agregar campos de texto
     for (const key in fields) {
-      // Si el campo es array (formidable convierte checkboxes o múltiples inputs así)
       if (Array.isArray(fields[key])) {
         fields[key].forEach((val) => formData.append(key, val));
       } else {
@@ -48,24 +47,40 @@ export default async function handler(req, res) {
       }
     }
 
-    // Agregar archivos si existen
+    // Agregar archivos
     for (const key in files) {
       const file = files[key];
       if (!file) continue;
 
       if (Array.isArray(file)) {
         file.forEach((f) => {
-          formData.append(key, fs.createReadStream(f.filepath), f.originalFilename);
+          formData.append(
+            key,
+            fs.createReadStream(f.filepath),
+            f.originalFilename
+          );
         });
       } else {
-        formData.append(key, fs.createReadStream(file.filepath), file.originalFilename);
+        formData.append(
+          key,
+          fs.createReadStream(file.filepath),
+          file.originalFilename
+        );
       }
     }
 
-    const backendRes = await fetch("http://157.180.88.215:4000/create-thumbnail", {
-      method: "POST",
-      body: formData,
-    });
+    // 🔍 Log para ver lo que se reenvía realmente a Hetzner
+    for (let pair of formData.entries()) {
+      console.log("🔄 Reenviando desde Vercel:", pair[0], pair[1]);
+    }
+
+    const backendRes = await fetch(
+      "http://157.180.88.215:4000/create-thumbnail",
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
 
     const backendData = await backendRes.json();
 

@@ -72,13 +72,18 @@ export default function CreateForm() {
 
       if (value instanceof FileList) {
         for (let i = 0; i < value.length; i++) {
-          fd.append(key, value[i], value[i].name) // ✅ Asegura que el archivo tenga nombre
+          fd.append(key, value[i], value[i].name)
         }
       } else if (Array.isArray(value)) {
         value.forEach((v) => fd.append(key, v))
       } else {
         fd.append(key, value)
       }
+    }
+
+    // 🔍 LOG: Ver qué se está enviando al backend
+    for (let pair of fd.entries()) {
+      console.log("🟢 Enviando desde el cliente:", pair[0], pair[1])
     }
 
     try {
