@@ -15,10 +15,10 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Método no permitido" });
   }
 
-  // Configurar formidable
+  // Configuración de formidable
   const form = formidable({
     multiples: true,              // Permitir múltiples archivos
-    uploadDir: os.tmpdir(),       // Directorio temporal seguro en Vercel
+    uploadDir: os.tmpdir(),       // Directorio temporal seguro
     keepExtensions: true,         // Mantener extensión de archivos
     maxFileSize: 200 * 1024 * 1024, // 200MB máximo por archivo
   });
@@ -35,11 +35,15 @@ export default async function handler(req, res) {
   try {
     const { fields, files } = await parseForm(req);
 
-    // 🔍 Logs para depuración
-    console.log("📩 Campos recibidos:", fields);
-    console.log("📂 Archivos recibidos:", files);
+    // 🔍 Depuración: mostrar qué se recibe
+    console.log("📩 Campos recibidos:", fields || {});
+    if (files && Object.keys(files).length > 0) {
+      console.log("📂 Archivos recibidos:", files);
+    } else {
+      console.log("📂 No se subieron archivos.");
+    }
 
-    // ----- REENVÍO AL BACKEND (ejemplo Hetzner) -----
+    // ----- REENVÍO AL BACKEND -----
     const formData = new FormData();
 
     // Agregar campos de texto
@@ -51,21 +55,23 @@ export default async function handler(req, res) {
       }
     }
 
-    // Agregar archivos
-    for (const key in files) {
-      const file = files[key];
-      if (!file) continue;
+    // Agregar archivos si existen
+    if (files) {
+      for (const key in files) {
+        const file = files[key];
+        if (!file) continue;
 
-      if (Array.isArray(file)) {
-        file.forEach((f) => {
-          formData.append(key, fs.createReadStream(f.filepath), f.originalFilename);
-        });
-      } else {
-        formData.append(key, fs.createReadStream(file.filepath), file.originalFilename);
+        if (Array.isArray(file)) {
+          file.forEach((f) =>
+            formData.append(key, fs.createReadStream(f.filepath), f.originalFilename)
+          );
+        } else {
+          formData.append(key, fs.createReadStream(file.filepath), file.originalFilename);
+        }
       }
     }
 
-    // 🔍 Log de lo que se reenvía al backend
+    // 🔍 Depuración: mostrar lo que se enviará al backend
     for (let pair of formData.entries()) {
       console.log("🔄 Reenviando al backend:", pair[0], pair[1]);
     }
