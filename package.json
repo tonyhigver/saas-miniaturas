@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "form-data": "^4.0.4",
+    "formidable": "^3.5.4",
     "formidable-serverless": "^1.1.1",
     "next": "^15.5.3",
     "next-auth": "^4.24.11",
