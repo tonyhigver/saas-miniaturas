@@ -12,8 +12,8 @@ export default function CreateForm() {
     category: "",
     videoPlot: "",
     titleText: "",
-    titleColor: "#FFFFFF",
-    mainColors: "",
+    titleColor: "#FF0000", // color inicial
+    mainColors: "#FF0000,#00FF00,#0000FF", // colores iniciales
     format: "16:9",
     numFaces: 1,
     visualElements: "",
@@ -85,6 +85,9 @@ export default function CreateForm() {
       </div>
     );
   }
+
+  // Paleta de colores para seleccionar
+  const colorOptions = ["#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF", "#00FFFF"];
 
   return (
     <div className="min-h-screen bg-black text-white p-8">
@@ -204,6 +207,7 @@ export default function CreateForm() {
             />
           )}
 
+          {/* Selección de color de título */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -214,14 +218,21 @@ export default function CreateForm() {
             Color del texto
           </label>
           {enabledFields.titleColor && (
-            <input
-              type="color"
+            <select
               name="titleColor"
               value={formData.titleColor}
               onChange={handleChange}
-            />
+              className="p-2 rounded bg-gray-800"
+            >
+              {colorOptions.map((color) => (
+                <option key={color} value={color}>
+                  {color}
+                </option>
+              ))}
+            </select>
           )}
 
+          {/* Selección de colores principales */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -232,14 +243,18 @@ export default function CreateForm() {
             Colores principales
           </label>
           {enabledFields.mainColors && (
-            <input
-              type="text"
+            <select
               name="mainColors"
-              placeholder="Ejemplo: #FF0000, #00FF00"
-              className="p-2 w-full rounded bg-gray-800"
               value={formData.mainColors}
               onChange={handleChange}
-            />
+              className="p-2 rounded bg-gray-800"
+            >
+              {colorOptions.map((color) => (
+                <option key={color} value={color}>
+                  {color}
+                </option>
+              ))}
+            </select>
           )}
         </div>
 
