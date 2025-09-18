@@ -13,30 +13,39 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Método no permitido" });
   }
 
-  // Configuración de formidable solo para texto
+  // Configuración de formidable solo para texto (sin archivos)
   const form = formidable({
-    multiples: false, // No se esperan archivos
+    multiples: false, // No esperamos archivos
   });
 
   // Promesa para parsear el form
   const parseForm = (req) =>
     new Promise((resolve, reject) => {
+      // Log de cada campo recibido
+      form.on("field", (name, value) => {
+        console.log("🔹 Campo recibido:", name, value);
+      });
+
+      form.on("error", (err) => {
+        console.error("❌ Error de Formidable:", err);
+        reject(err);
+      });
+
       form.parse(req, (err, fields) => {
         if (err) reject(err);
-        else resolve(fields);
+        else {
+          console.log("✅ Todos los campos parseados:", fields);
+          resolve(fields);
+        }
       });
     });
 
   try {
     const fields = await parseForm(req);
 
-    // 🔍 Depuración: mostrar qué se recibe
-    console.log("📩 Campos recibidos:", fields || {});
-
     // ----- REENVÍO AL BACKEND -----
     const formData = new FormData();
 
-    // Agregar solo campos de texto
     for (const key in fields) {
       if (Array.isArray(fields[key])) {
         fields[key].forEach((val) => formData.append(key, val));
@@ -45,7 +54,7 @@ export default async function handler(req, res) {
       }
     }
 
-    // 🔍 Depuración: mostrar lo que se enviará al backend
+    // Depuración: mostrar lo que se enviará al backend
     for (let pair of formData.entries()) {
       console.log("🔄 Reenviando al backend:", pair[0], pair[1]);
     }
