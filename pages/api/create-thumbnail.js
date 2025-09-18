@@ -1,6 +1,8 @@
 // pages/api/create-thumbnail.js
 import formidable from "formidable";
 import fs from "fs";
+import os from "os";
+import { FormData } from "formdata-node";
 import fetch from "node-fetch";
 
 // ⛔ Desactivar bodyParser de Next.js
@@ -13,11 +15,11 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Método no permitido" });
   }
 
-  // Configurar formidable
+  // Configurar formidable con directorio temporal válido
   const form = formidable({
-    multiples: true,       // Permitir múltiples archivos
-    uploadDir: "/tmp",     // Directorio temporal para los archivos
-    keepExtensions: true,  // Mantener extensión de archivos
+    multiples: true,              // Permitir múltiples archivos
+    uploadDir: os.tmpdir(),       // 🔹 Cambiado de "/tmp" a os.tmpdir()
+    keepExtensions: true,          // Mantener extensión de archivos
   });
 
   // Promesa para parsear el form
@@ -37,7 +39,6 @@ export default async function handler(req, res) {
     console.log("📂 Archivos recibidos:", files);
 
     // ----- REENVÍO AL BACKEND HETZNER -----
-    const { FormData } = await import("formdata-node");
     const formData = new FormData();
 
     // Agregar campos de texto
@@ -56,34 +57,23 @@ export default async function handler(req, res) {
 
       if (Array.isArray(file)) {
         file.forEach((f) => {
-          formData.append(
-            key,
-            fs.createReadStream(f.filepath),
-            f.originalFilename
-          );
+          formData.append(key, fs.createReadStream(f.filepath), f.originalFilename);
         });
       } else {
-        formData.append(
-          key,
-          fs.createReadStream(file.filepath),
-          file.originalFilename
-        );
+        formData.append(key, fs.createReadStream(file.filepath), file.originalFilename);
       }
     }
 
     // 🔍 Log de lo que se reenvía
-    for (let pair of formData.entries()) {
+    for (const pair of formData.entries()) {
       console.log("🔄 Reenviando al backend:", pair[0], pair[1]);
     }
 
     // Enviar al backend Hetzner
-    const backendRes = await fetch(
-      "http://157.180.88.215:4000/create-thumbnail",
-      {
-        method: "POST",
-        body: formData,
-      }
-    );
+    const backendRes = await fetch("http://157.180.88.215:4000/create-thumbnail", {
+      method: "POST",
+      body: formData,
+    });
 
     const backendData = await backendRes.json();
 
