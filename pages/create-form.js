@@ -15,7 +15,7 @@ export default function CreateForm() {
     titleText: "",
     titleColor: "#FFFFFF",
     mainColors: "",
-    referenceImages: [],
+    referenceImages: null,
     emojis: "",
     format: "16:9",
     clickbaitLevel: 50,
@@ -27,28 +27,11 @@ export default function CreateForm() {
     template: "",
   });
 
-  const [enabledFields, setEnabledFields] = useState({
-    description: false,
-    category: false,
-    videoFile: false,
-    videoPlot: false,
-    titleText: false,
-    titleColor: false,
-    mainColors: false,
-    referenceImages: false,
-    emojis: false,
-    format: false,
-    clickbaitLevel: false,
-    numFaces: false,
-    visualElements: false,
-    additionalText: false,
-    numResults: false,
-    polarize: false,
-    template: false,
-  });
+  const [enabledFields, setEnabledFields] = useState({});
 
   const handleChange = (e) => {
     const { name, value, type, checked, files } = e.target;
+
     if (type === "file") {
       setFormData((prev) => ({ ...prev, [name]: files }));
     } else if (type === "checkbox" && name in enabledFields) {
@@ -65,9 +48,9 @@ export default function CreateForm() {
 
     const fd = new FormData();
 
-    // ⬅ Enviar TODOS los campos, sin depender de enabledFields
     for (const key in formData) {
       const value = formData[key];
+
       if (value instanceof FileList) {
         for (let i = 0; i < value.length; i++) {
           fd.append(key, value[i], value[i].name);
@@ -79,7 +62,7 @@ export default function CreateForm() {
       }
     }
 
-    // 🔍 LOG: Depurar datos que se envían al backend
+    // 🔍 Depurar FormData antes de enviar
     for (let pair of fd.entries()) {
       console.log("➡ Enviando al API:", pair[0], pair[1]);
     }
@@ -92,7 +75,7 @@ export default function CreateForm() {
 
       const data = await res.json();
       console.log("Respuesta del servidor:", data);
-      alert("Miniaturas generadas correctamente. Revisa consola.");
+      alert("Miniaturas generadas correctamente. Revisa la consola.");
     } catch (err) {
       console.error("Error enviando formulario:", err);
       alert("Error al enviar los datos");
@@ -137,11 +120,12 @@ export default function CreateForm() {
         <div className="border p-4 rounded-lg">
           <h2 className="text-xl font-semibold mb-2">1️⃣ Extraer información</h2>
 
+          {/** Description */}
           <label className="flex gap-2 items-center">
             <input
               type="checkbox"
               name="description"
-              checked={enabledFields.description}
+              checked={enabledFields.description || false}
               onChange={handleChange}
             />
             Prompt / Descripción de la miniatura
@@ -157,11 +141,12 @@ export default function CreateForm() {
             />
           )}
 
+          {/** Category */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
               name="category"
-              checked={enabledFields.category}
+              checked={enabledFields.category || false}
               onChange={handleChange}
             />
             Categoría
@@ -181,11 +166,12 @@ export default function CreateForm() {
             </select>
           )}
 
+          {/** Video File */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
               name="videoFile"
-              checked={enabledFields.videoFile}
+              checked={enabledFields.videoFile || false}
               onChange={handleChange}
             />
             Subir video para analizar plot
@@ -199,11 +185,12 @@ export default function CreateForm() {
             />
           )}
 
+          {/** Video Plot */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
               name="videoPlot"
-              checked={enabledFields.videoPlot}
+              checked={enabledFields.videoPlot || false}
               onChange={handleChange}
             />
             Escribir plot del video
@@ -223,11 +210,12 @@ export default function CreateForm() {
         <div className="border p-4 rounded-lg">
           <h2 className="text-xl font-semibold mb-2">2️⃣ Partes visuales</h2>
 
+          {/** Title Text */}
           <label className="flex gap-2 items-center">
             <input
               type="checkbox"
               name="titleText"
-              checked={enabledFields.titleText}
+              checked={enabledFields.titleText || false}
               onChange={handleChange}
             />
             Texto en la miniatura
@@ -243,11 +231,12 @@ export default function CreateForm() {
             />
           )}
 
+          {/** Title Color */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
               name="titleColor"
-              checked={enabledFields.titleColor}
+              checked={enabledFields.titleColor || false}
               onChange={handleChange}
             />
             Color del texto
@@ -261,11 +250,12 @@ export default function CreateForm() {
             />
           )}
 
+          {/** Main Colors */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
               name="mainColors"
-              checked={enabledFields.mainColors}
+              checked={enabledFields.mainColors || false}
               onChange={handleChange}
             />
             Colores principales
@@ -281,11 +271,12 @@ export default function CreateForm() {
             />
           )}
 
+          {/** Reference Images */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
               name="referenceImages"
-              checked={enabledFields.referenceImages}
+              checked={enabledFields.referenceImages || false}
               onChange={handleChange}
             />
             Imágenes de referencia
@@ -300,11 +291,12 @@ export default function CreateForm() {
             />
           )}
 
+          {/** Emojis */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
               name="emojis"
-              checked={enabledFields.emojis}
+              checked={enabledFields.emojis || false}
               onChange={handleChange}
             />
             Emojis o stickers
@@ -320,11 +312,12 @@ export default function CreateForm() {
             />
           )}
 
+          {/** Format */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
               name="format"
-              checked={enabledFields.format}
+              checked={enabledFields.format || false}
               onChange={handleChange}
             />
             Formato
@@ -342,11 +335,12 @@ export default function CreateForm() {
             </select>
           )}
 
+          {/** Clickbait Level */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
               name="clickbaitLevel"
-              checked={enabledFields.clickbaitLevel}
+              checked={enabledFields.clickbaitLevel || false}
               onChange={handleChange}
             />
             Nivel de clickbait
@@ -362,11 +356,12 @@ export default function CreateForm() {
             />
           )}
 
+          {/** Num Faces */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
               name="numFaces"
-              checked={enabledFields.numFaces}
+              checked={enabledFields.numFaces || false}
               onChange={handleChange}
             />
             Número de caras
@@ -383,11 +378,12 @@ export default function CreateForm() {
             />
           )}
 
+          {/** Visual Elements */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
               name="visualElements"
-              checked={enabledFields.visualElements}
+              checked={enabledFields.visualElements || false}
               onChange={handleChange}
             />
             Elementos visuales
@@ -403,11 +399,12 @@ export default function CreateForm() {
             />
           )}
 
+          {/** Additional Text */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
               name="additionalText"
-              checked={enabledFields.additionalText}
+              checked={enabledFields.additionalText || false}
               onChange={handleChange}
             />
             Texto adicional
@@ -427,11 +424,12 @@ export default function CreateForm() {
         <div className="border p-4 rounded-lg">
           <h2 className="text-xl font-semibold mb-2">3️⃣ Puntos adicionales</h2>
 
+          {/** Num Results */}
           <label className="flex gap-2 items-center">
             <input
               type="checkbox"
               name="numResults"
-              checked={enabledFields.numResults}
+              checked={enabledFields.numResults || false}
               onChange={handleChange}
             />
             Número de miniaturas a generar
@@ -448,11 +446,12 @@ export default function CreateForm() {
             />
           )}
 
+          {/** Polarize */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
               name="polarize"
-              checked={enabledFields.polarize}
+              checked={enabledFields.polarize || false}
               onChange={handleChange}
             />
             Polarización de resultados
@@ -469,11 +468,12 @@ export default function CreateForm() {
             </label>
           )}
 
+          {/** Template */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
               name="template"
-              checked={enabledFields.template}
+              checked={enabledFields.template || false}
               onChange={handleChange}
             />
             Plantilla base
