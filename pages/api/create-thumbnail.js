@@ -24,14 +24,18 @@ export default async function handler(req, res) {
 
   try {
     // Parsear los datos recibidos en multipart/form-data
-    const [fields, files] = await form.parse(req)
+    const [fields, files] = await new Promise((resolve, reject) => {
+      form.parse(req, (err, fields, files) => {
+        if (err) reject(err)
+        else resolve([fields, files])
+      })
+    })
 
     console.log("📩 Campos recibidos en Vercel:", fields)
     console.log("📂 Archivos recibidos en Vercel:", files)
 
     // ----- REENVÍO AL BACKEND EN HETZNER -----
-    // Crear FormData para enviar campos + archivos
-    const FormData = (await import("formdata-node")).FormData
+    const { FormData } = await import("formdata-node")
     const formData = new FormData()
 
     // Agregar campos de texto
@@ -51,7 +55,7 @@ export default async function handler(req, res) {
       }
     }
 
-    // Enviar a Hetzner
+    // Enviar al backend de Hetzner
     const backendRes = await fetch("http://157.180.88.215:4000/create-thumbnail", {
       method: "POST",
       body: formData,
