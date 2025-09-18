@@ -66,14 +66,18 @@ export default function CreateForm() {
     const fd = new FormData()
 
     for (const key in formData) {
-      if (enabledFields[key]) {
-        if (formData[key] instanceof FileList) {
-          for (let i = 0; i < formData[key].length; i++) {
-            fd.append(key, formData[key][i])
-          }
-        } else {
-          fd.append(key, formData[key])
+      if (!enabledFields[key]) continue
+
+      const value = formData[key]
+
+      if (value instanceof FileList) {
+        for (let i = 0; i < value.length; i++) {
+          fd.append(key, value[i], value[i].name) // ✅ Asegura que el archivo tenga nombre
         }
+      } else if (Array.isArray(value)) {
+        value.forEach((v) => fd.append(key, v))
+      } else {
+        fd.append(key, value)
       }
     }
 
