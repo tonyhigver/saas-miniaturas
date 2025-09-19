@@ -47,18 +47,20 @@ export default function CreateForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const fd = new FormData();
 
+    // Crear un objeto JSON solo con campos habilitados
+    const payload = {};
     for (const key in formData) {
       if (enabledFields[key]) {
-        fd.append(key, formData[key]);
+        payload[key] = formData[key];
       }
     }
 
     try {
       const res = await fetch("/api/create-thumbnail", {
         method: "POST",
-        body: fd,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
@@ -78,7 +80,7 @@ export default function CreateForm() {
     );
   }
 
-  // Colores disponibles para la paleta
+  // Paleta de colores disponible
   const colorOptions = [
     "#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF", "#00FFFF",
     "#000000", "#FFFFFF", "#FFA500", "#800080", "#008080", "#FFC0CB",
@@ -204,7 +206,7 @@ export default function CreateForm() {
             />
           )}
 
-          {/* NUEVO: Color primario de la miniatura */}
+          {/* Color primario de la miniatura */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
