@@ -10,16 +10,13 @@ export default function CreateForm() {
   const [formData, setFormData] = useState({
     description: "",
     category: "",
-    videoFile: null,
     videoPlot: "",
     titleText: "",
     titleColor: "#FF0000",
     mainColors: "#FF0000,#00FF00,#0000FF",
-    referenceImages: null,
     format: "16:9",
     clickbaitLevel: "50",
     numFaces: 1,
-    visualElements: null,
     additionalText: "",
     numResults: 3,
     template: "",
@@ -28,28 +25,23 @@ export default function CreateForm() {
   const [enabledFields, setEnabledFields] = useState({
     description: false,
     category: false,
-    videoFile: false,
     videoPlot: false,
     titleText: false,
     titleColor: false,
     mainColors: false,
-    referenceImages: false,
     format: false,
     clickbaitLevel: false,
     numFaces: false,
-    visualElements: false,
     additionalText: false,
     numResults: false,
     template: false,
   });
 
   const handleChange = (e) => {
-    const { name, value, type, checked, files } = e.target;
+    const { name, value, type, checked } = e.target;
 
     if (type === "checkbox" && name in enabledFields) {
       setEnabledFields((prev) => ({ ...prev, [name]: checked }));
-    } else if (type === "file") {
-      setFormData((prev) => ({ ...prev, [name]: files }));
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
@@ -61,13 +53,7 @@ export default function CreateForm() {
 
     for (const key in formData) {
       if (enabledFields[key]) {
-        if (formData[key] instanceof FileList) {
-          for (let file of formData[key]) {
-            fd.append(key, file);
-          }
-        } else {
-          fd.append(key, formData[key]);
-        }
+        fd.append(key, formData[key]);
       }
     }
 
@@ -131,28 +117,8 @@ export default function CreateForm() {
         <div className="border p-4 rounded-lg">
           <h2 className="text-xl font-semibold mb-2">1️⃣ Extraer información</h2>
 
-          {/* Subir video */}
-          <label className="flex gap-2 items-center">
-            <input
-              type="checkbox"
-              name="videoFile"
-              checked={enabledFields.videoFile}
-              onChange={handleChange}
-            />
-            Subir video para analizar plot
-          </label>
-          {enabledFields.videoFile && (
-            <input
-              type="file"
-              name="videoFile"
-              accept="video/*"
-              className="p-2 w-full rounded bg-gray-800"
-              onChange={handleChange}
-            />
-          )}
-
           {/* Descripción */}
-          <label className="flex gap-2 items-center mt-3">
+          <label className="flex gap-2 items-center">
             <input
               type="checkbox"
               name="description"
@@ -293,27 +259,6 @@ export default function CreateForm() {
             </select>
           )}
 
-          {/* Imágenes de referencia */}
-          <label className="flex gap-2 items-center mt-3">
-            <input
-              type="checkbox"
-              name="referenceImages"
-              checked={enabledFields.referenceImages}
-              onChange={handleChange}
-            />
-            Imágenes de referencia
-          </label>
-          {enabledFields.referenceImages && (
-            <input
-              type="file"
-              name="referenceImages"
-              accept="image/*"
-              multiple
-              className="p-2 w-full rounded bg-gray-800"
-              onChange={handleChange}
-            />
-          )}
-
           {/* Formato */}
           <label className="flex gap-2 items-center mt-3">
             <input
@@ -389,27 +334,6 @@ export default function CreateForm() {
                 </option>
               ))}
             </select>
-          )}
-
-          {/* Elementos visuales */}
-          <label className="flex gap-2 items-center mt-3">
-            <input
-              type="checkbox"
-              name="visualElements"
-              checked={enabledFields.visualElements}
-              onChange={handleChange}
-            />
-            Elementos visuales
-          </label>
-          {enabledFields.visualElements && (
-            <input
-              type="file"
-              name="visualElements"
-              accept="image/*"
-              multiple
-              className="p-2 w-full rounded bg-gray-800"
-              onChange={handleChange}
-            />
           )}
 
           {/* Texto adicional */}
