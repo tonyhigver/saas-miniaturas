@@ -48,7 +48,7 @@ export default function CreateForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // ✅ Usar FormData para enviar los datos al backend como antes
+    // Usar FormData para enviar los campos habilitados
     const fd = new FormData();
     for (const key in formData) {
       if (enabledFields[key]) {
@@ -59,7 +59,7 @@ export default function CreateForm() {
     try {
       const res = await fetch("/api/create-thumbnail", {
         method: "POST",
-        body: fd, // <-- importante: NO JSON
+        body: fd, // 👈 FormData para evitar el error 500
       });
 
       const data = await res.json();
@@ -112,6 +112,7 @@ export default function CreateForm() {
       </header>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+
         {/* 1️⃣ Extraer información */}
         <div className="border p-4 rounded-lg">
           <h2 className="text-xl font-semibold mb-2">1️⃣ Extraer información</h2>
@@ -225,7 +226,7 @@ export default function CreateForm() {
                   }`}
                   style={{ backgroundColor: color }}
                   title={color}
-                ></div>
+                />
               ))}
             </div>
           )}
@@ -316,7 +317,7 @@ export default function CreateForm() {
                   }`}
                   style={{ backgroundColor: color }}
                   title={color}
-                ></div>
+                />
               ))}
             </div>
           )}
