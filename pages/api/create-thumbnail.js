@@ -15,7 +15,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Parsear formulario (texto + archivos)
+    // Crear formulario multiparty
     const form = new multiparty.Form();
 
     form.parse(req, async (err, fields, files) => {
@@ -24,31 +24,37 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: "Error parseando formulario" });
       }
 
+      // Mostrar campos y archivos recibidos
       console.log("📩 Campos recibidos:", fields);
       console.log("📂 Archivos recibidos:", files);
 
-      // Crear FormData para reenviar al backend
+      // Crear FormData para enviar al backend
       const formData = new FormData();
 
       // Añadir campos de texto
       for (const key in fields) {
-        fields[key].forEach((val) => formData.append(key, val));
+        fields[key].forEach((val) => {
+          formData.append(key, val);
+        });
       }
 
-      // Añadir archivos (stream directo)
+      // Añadir archivos (imagen de la cara u otros)
       for (const key in files) {
         files[key].forEach((file) => {
           formData.append(
             key,
             fs.createReadStream(file.path),
-            { filename: file.originalFilename, contentType: file.headers["content-type"] }
+            {
+              filename: file.originalFilename,
+              contentType: file.headers["content-type"],
+            }
           );
         });
       }
 
       console.log("🔄 Reenviando datos al backend...");
 
-      // Enviar al backend
+      // Enviar datos al backend
       const backendRes = await fetch("http://157.180.88.215:4000/create-thumbnail", {
         method: "POST",
         body: formData,
