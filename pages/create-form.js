@@ -12,14 +12,16 @@ export default function CreateForm() {
     category: "",
     videoPlot: "",
     titleText: "",
-    titleColor: "#FF0000", // color inicial
-    mainColors: "#FF0000,#00FF00,#0000FF", // colores iniciales
+    titleColor: "#FF0000",
+    mainColors: "#FF0000,#00FF00,#0000FF",
     format: "16:9",
     numFaces: 1,
     visualElements: "",
     additionalText: "",
     numResults: 3,
     template: "",
+    clickbaitLevel: "50%",
+    facesImage: null, // archivo
   });
 
   const [enabledFields, setEnabledFields] = useState({
@@ -35,15 +37,17 @@ export default function CreateForm() {
     additionalText: false,
     numResults: false,
     template: false,
+    clickbaitLevel: false,
+    facesImage: false,
   });
 
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value, type, checked, files } = e.target;
 
     if (type === "checkbox" && name in enabledFields) {
       setEnabledFields((prev) => ({ ...prev, [name]: checked }));
-    } else if (type === "checkbox") {
-      setFormData((prev) => ({ ...prev, [name]: checked }));
+    } else if (type === "file") {
+      setFormData((prev) => ({ ...prev, [name]: files[0] }));
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
@@ -86,8 +90,8 @@ export default function CreateForm() {
     );
   }
 
-  // Paleta de colores para seleccionar
   const colorOptions = ["#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF", "#00FFFF"];
+  const clickbaitOptions = ["25%", "50%", "75%", "100%"];
 
   return (
     <div className="min-h-screen bg-black text-white p-8">
@@ -262,6 +266,32 @@ export default function CreateForm() {
         <div className="border p-4 rounded-lg">
           <h2 className="text-xl font-semibold mb-2">3️⃣ Puntos adicionales</h2>
 
+          {/* Nivel de Clickbait */}
+          <label className="flex gap-2 items-center mt-3">
+            <input
+              type="checkbox"
+              name="clickbaitLevel"
+              checked={enabledFields.clickbaitLevel}
+              onChange={handleChange}
+            />
+            Nivel de Clickbait
+          </label>
+          {enabledFields.clickbaitLevel && (
+            <select
+              name="clickbaitLevel"
+              value={formData.clickbaitLevel}
+              onChange={handleChange}
+              className="p-2 rounded bg-gray-800"
+            >
+              {clickbaitOptions.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
+              ))}
+            </select>
+          )}
+
+          {/* Número de caras */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -283,6 +313,27 @@ export default function CreateForm() {
             />
           )}
 
+          {/* Imagen de caras */}
+          <label className="flex gap-2 items-center mt-3">
+            <input
+              type="checkbox"
+              name="facesImage"
+              checked={enabledFields.facesImage}
+              onChange={handleChange}
+            />
+            Subir imagen de las caras
+          </label>
+          {enabledFields.facesImage && (
+            <input
+              type="file"
+              name="facesImage"
+              accept="image/*"
+              className="p-2 w-full rounded bg-gray-800"
+              onChange={handleChange}
+            />
+          )}
+
+          {/* Elementos visuales */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -303,6 +354,7 @@ export default function CreateForm() {
             />
           )}
 
+          {/* Texto adicional */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -322,6 +374,7 @@ export default function CreateForm() {
             />
           )}
 
+          {/* Número de resultados */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -343,6 +396,7 @@ export default function CreateForm() {
             />
           )}
 
+          {/* Plantilla base */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
