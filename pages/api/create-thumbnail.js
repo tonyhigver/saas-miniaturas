@@ -1,55 +1,49 @@
 // pages/api/create-thumbnail.js
 import formidable from "formidable";
+import { FormData } from "formdata-node";
 import fetch from "node-fetch";
 
-// ⛔ Desactivar bodyParser de Next.js porque usamos formidable
+// ⛔ Desactivar bodyParser de Next.js
 export const config = {
   api: { bodyParser: false },
 };
-
-// 📌 Función auxiliar para parsear SOLO campos de texto
-const parseTextFields = (req) =>
-  new Promise((resolve, reject) => {
-    const form = formidable({
-      multiples: false,
-      // 🚫 Ignora archivos, solo se procesan campos de texto
-      filter: () => false,
-    });
-
-    const fieldsData = {};
-
-    // Captura los campos de texto
-    form.on("field", (name, value) => {
-      console.log("🔹 Campo de texto recibido:", name, value);
-      fieldsData[name] = value;
-    });
-
-    form.on("error", (err) => {
-      console.error("❌ Error al parsear campos:", err);
-      reject(err);
-    });
-
-    form.parse(req, (err) => {
-      if (err) reject(err);
-      else {
-        console.log("✅ Campos de texto parseados:", fieldsData);
-        resolve(fieldsData);
-      }
-    });
-  });
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Método no permitido" });
   }
 
-  try {
-    // 1️⃣ Parsear únicamente campos de texto
-    const fields = await parseTextFields(req);
+  // Configuración de formidable solo para campos de texto
+  const form = formidable({ multiples: false });
 
-    // 2️⃣ Normalizar a JSON limpio
+  const parseForm = (req) =>
+    new Promise((resolve, reject) => {
+      // Depuración: mostrar cada campo recibido
+      form.on("field", (name, value) => {
+        console.log("🔹 Campo recibido:", name, value);
+      });
+
+      form.on("error", (err) => {
+        console.error("❌ Error de Formidable:", err);
+        reject(err);
+      });
+
+      form.parse(req, (err, fields) => {
+        if (err) reject(err);
+        else {
+          console.log("✅ Todos los campos parseados:", fields);
+          resolve(fields);
+        }
+      });
+    });
+
+  try {
+    const fields = await parseForm(req);
+
+    // Convertimos todo a JSON limpio antes de reenviar
     const jsonPayload = {};
     for (const key in fields) {
+      // Si es un array con un solo valor, convertir a string
       if (Array.isArray(fields[key]) && fields[key].length === 1) {
         jsonPayload[key] = fields[key][0];
       } else {
@@ -59,7 +53,7 @@ export default async function handler(req, res) {
 
     console.log("🔄 JSON a enviar al backend:", jsonPayload);
 
-    // 3️⃣ Enviar los datos al backend
+    // Enviar al backend como JSON
     const backendRes = await fetch("http://157.180.88.215:4000/create-thumbnail", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
