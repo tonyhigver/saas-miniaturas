@@ -13,6 +13,7 @@
     "formdata-node": "^6.0.3",
     "formidable": "^3.5.4",
     "formidable-serverless": "^1.1.1",
+    "multiparty": "^4.2.3",
     "next": "^15.5.3",
     "next-auth": "^4.24.11",
     "next-multiparty": "^0.7.0",
