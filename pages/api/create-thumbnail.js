@@ -1,6 +1,6 @@
 // pages/api/create-thumbnail.js
-import multiparty from "next-multiparty";
-import { FormData } from "formdata-node";
+import multiparty from "multiparty";
+import FormData from "form-data";
 import fetch from "node-fetch";
 import fs from "fs";
 
@@ -16,61 +16,52 @@ export default async function handler(req, res) {
 
   try {
     // Parsear formulario (texto + archivos)
-    const form = await multiparty(req);
+    const form = new multiparty.Form();
 
-    const fields = form.fields; // { description: ["Texto"], titleColor: ["#FF0000"], ... }
-    const files = form.files;   // { facesImage: [{ filepath, originalFilename, mimetype }] }
+    form.parse(req, async (err, fields, files) => {
+      if (err) {
+        console.error("❌ Error parseando formulario:", err);
+        return res.status(500).json({ error: "Error parseando formulario" });
+      }
 
-    console.log("📩 Campos recibidos:", fields);
-    console.log("📂 Archivos recibidos:", files);
+      console.log("📩 Campos recibidos:", fields);
+      console.log("📂 Archivos recibidos:", files);
 
-    // Preparar FormData si hay archivos, si no enviar JSON
-    let bodyToSend;
-    let headers = {};
-
-    const hasFiles = files && Object.keys(files).length > 0;
-
-    if (hasFiles) {
-      bodyToSend = new FormData();
+      // Crear FormData para reenviar al backend
+      const formData = new FormData();
 
       // Añadir campos de texto
       for (const key in fields) {
-        fields[key].forEach((val) => bodyToSend.append(key, val));
+        fields[key].forEach((val) => formData.append(key, val));
       }
 
-      // Añadir archivos
+      // Añadir archivos (stream directo)
       for (const key in files) {
         files[key].forEach((file) => {
-          const fileData = fs.readFileSync(file.filepath);
-          bodyToSend.append(key, new Blob([fileData], { type: file.mimetype }), file.originalFilename);
+          formData.append(
+            key,
+            fs.createReadStream(file.path),
+            { filename: file.originalFilename, contentType: file.headers["content-type"] }
+          );
         });
       }
-    } else {
-      // Solo texto: enviar JSON
-      bodyToSend = {};
-      for (const key in fields) {
-        bodyToSend[key] = fields[key].length === 1 ? fields[key][0] : fields[key];
-      }
-      bodyToSend = JSON.stringify(bodyToSend);
-      headers["Content-Type"] = "application/json";
-    }
 
-    console.log("🔄 Datos a enviar al backend:", hasFiles ? "FormData con archivos" : bodyToSend);
+      console.log("🔄 Reenviando datos al backend...");
 
-    // Enviar al backend
-    const backendRes = await fetch("http://157.180.88.215:4000/create-thumbnail", {
-      method: "POST",
-      headers,
-      body: bodyToSend,
+      // Enviar al backend
+      const backendRes = await fetch("http://157.180.88.215:4000/create-thumbnail", {
+        method: "POST",
+        body: formData,
+        headers: formData.getHeaders(), // importante para multipart/form-data
+      });
+
+      const backendData = await backendRes.json();
+
+      return res.status(200).json({
+        message: "Formulario recibido y reenviado ✅",
+        backendResponse: backendData,
+      });
     });
-
-    const backendData = await backendRes.json();
-
-    return res.status(200).json({
-      message: "Formulario recibido y reenviado ✅",
-      backendResponse: backendData,
-    });
-
   } catch (err) {
     console.error("❌ Error procesando el formulario:", err);
     return res.status(500).json({ error: "Error en el servidor" });
