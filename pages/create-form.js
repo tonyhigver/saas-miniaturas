@@ -12,12 +12,10 @@ export default function CreateForm() {
     category: "",
     videoPlot: "",
     titleText: "",
-    titleColor: "#FF0000", // color inicial
-    mainColors: "#FF0000,#00FF00,#0000FF", // colores iniciales
-    format: "16:9",
     numFaces: 1,
     visualElements: "",
     additionalText: "",
+    textColor: "#FF0000",
     numResults: 3,
     template: "",
   });
@@ -27,12 +25,10 @@ export default function CreateForm() {
     category: false,
     videoPlot: false,
     titleText: false,
-    titleColor: false,
-    mainColors: false,
-    format: false,
     numFaces: false,
     visualElements: false,
     additionalText: false,
+    textColor: false,
     numResults: false,
     template: false,
   });
@@ -42,8 +38,6 @@ export default function CreateForm() {
 
     if (type === "checkbox" && name in enabledFields) {
       setEnabledFields((prev) => ({ ...prev, [name]: checked }));
-    } else if (type === "checkbox") {
-      setFormData((prev) => ({ ...prev, [name]: checked }));
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
@@ -59,10 +53,6 @@ export default function CreateForm() {
       }
     }
 
-    for (let pair of fd.entries()) {
-      console.log("➡ Enviando al API:", pair[0], pair[1]);
-    }
-
     try {
       const res = await fetch("/api/create-thumbnail", {
         method: "POST",
@@ -70,10 +60,10 @@ export default function CreateForm() {
       });
 
       const data = await res.json();
-      console.log("Respuesta del servidor:", data);
+      console.log("✅ Respuesta del servidor:", data);
       alert("Miniaturas generadas correctamente. Revisa la consola.");
     } catch (err) {
-      console.error("Error enviando formulario:", err);
+      console.error("❌ Error enviando formulario:", err);
       alert("Error al enviar los datos");
     }
   };
@@ -86,8 +76,12 @@ export default function CreateForm() {
     );
   }
 
-  // Paleta de colores para seleccionar
-  const colorOptions = ["#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF", "#00FFFF"];
+  // Colores para mostrar visualmente
+  const colorOptions = [
+    "#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF", "#00FFFF",
+    "#000000", "#FFFFFF", "#FFA500", "#800080", "#008080", "#FFC0CB",
+    "#808000", "#A52A2A", "#ADD8E6", "#F0E68C", "#D2691E", "#B22222"
+  ];
 
   return (
     <div className="min-h-screen bg-black text-white p-8">
@@ -206,56 +200,6 @@ export default function CreateForm() {
               onChange={handleChange}
             />
           )}
-
-          {/* Selección de color de título */}
-          <label className="flex gap-2 items-center mt-3">
-            <input
-              type="checkbox"
-              name="titleColor"
-              checked={enabledFields.titleColor}
-              onChange={handleChange}
-            />
-            Color del texto
-          </label>
-          {enabledFields.titleColor && (
-            <select
-              name="titleColor"
-              value={formData.titleColor}
-              onChange={handleChange}
-              className="p-2 rounded bg-gray-800"
-            >
-              {colorOptions.map((color) => (
-                <option key={color} value={color}>
-                  {color}
-                </option>
-              ))}
-            </select>
-          )}
-
-          {/* Selección de colores principales */}
-          <label className="flex gap-2 items-center mt-3">
-            <input
-              type="checkbox"
-              name="mainColors"
-              checked={enabledFields.mainColors}
-              onChange={handleChange}
-            />
-            Colores principales
-          </label>
-          {enabledFields.mainColors && (
-            <select
-              name="mainColors"
-              value={formData.mainColors}
-              onChange={handleChange}
-              className="p-2 rounded bg-gray-800"
-            >
-              {colorOptions.map((color) => (
-                <option key={color} value={color}>
-                  {color}
-                </option>
-              ))}
-            </select>
-          )}
         </div>
 
         {/* 3️⃣ Puntos adicionales */}
@@ -320,6 +264,32 @@ export default function CreateForm() {
               value={formData.additionalText}
               onChange={handleChange}
             />
+          )}
+
+          {/* NUEVO: Selección de color de texto */}
+          <label className="flex gap-2 items-center mt-3">
+            <input
+              type="checkbox"
+              name="textColor"
+              checked={enabledFields.textColor}
+              onChange={handleChange}
+            />
+            Color del texto adicional
+          </label>
+          {enabledFields.textColor && (
+            <div className="flex flex-wrap gap-2 mt-2">
+              {colorOptions.map((color) => (
+                <div
+                  key={color}
+                  onClick={() => setFormData({ ...formData, textColor: color })}
+                  className={`w-8 h-8 rounded cursor-pointer border-2 ${
+                    formData.textColor === color ? "border-white" : "border-gray-600"
+                  }`}
+                  style={{ backgroundColor: color }}
+                  title={color}
+                ></div>
+              ))}
+            </div>
           )}
 
           <label className="flex gap-2 items-center mt-3">
