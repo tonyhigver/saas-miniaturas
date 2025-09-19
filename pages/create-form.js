@@ -14,13 +14,15 @@ export default function CreateForm() {
     titleText: "",
     primaryColor: "#FF0000",
     numFaces: 1,
-    visualElements: "",
+    visualElementsText: "",
+    visualElementsImage: null,
+    faceImage: null,
     additionalText: "",
     textColor: "#FF0000",
     numResults: 3,
     template: "",
-    format: "",       // nuevo campo
-    clickbait: "",    // nuevo campo
+    format: "",
+    clickbait: "",
   });
 
   const [enabledFields, setEnabledFields] = useState({
@@ -30,20 +32,24 @@ export default function CreateForm() {
     titleText: false,
     primaryColor: false,
     numFaces: false,
-    visualElements: false,
+    visualElementsText: false,
+    visualElementsImage: false,
+    faceImage: false,
     additionalText: false,
     textColor: false,
     numResults: false,
     template: false,
-    format: false,    // nuevo
-    clickbait: false, // nuevo
+    format: false,
+    clickbait: false,
   });
 
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value, type, checked, files } = e.target;
 
     if (type === "checkbox" && name in enabledFields) {
       setEnabledFields((prev) => ({ ...prev, [name]: checked }));
+    } else if (type === "file") {
+      setFormData((prev) => ({ ...prev, [name]: files[0] || null }));
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
@@ -52,18 +58,17 @@ export default function CreateForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const payload = {};
+    const payload = new FormData();
     for (const key in formData) {
       if (enabledFields[key]) {
-        payload[key] = formData[key];
+        payload.append(key, formData[key]);
       }
     }
 
     try {
       const res = await fetch("/api/create-thumbnail", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: payload,
       });
 
       const data = await res.json();
@@ -191,6 +196,7 @@ export default function CreateForm() {
         <div className="border p-4 rounded-lg">
           <h2 className="text-xl font-semibold mb-2">2️⃣ Partes visuales</h2>
 
+          {/* Texto de la miniatura */}
           <label className="flex gap-2 items-center">
             <input
               type="checkbox"
@@ -211,7 +217,7 @@ export default function CreateForm() {
             />
           )}
 
-          {/* Color primario de la miniatura */}
+          {/* Color primario */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -227,9 +233,7 @@ export default function CreateForm() {
                 <div
                   key={color}
                   onClick={() => setFormData({ ...formData, primaryColor: color })}
-                  className={`w-8 h-8 rounded cursor-pointer border-2 ${
-                    formData.primaryColor === color ? "border-white" : "border-gray-600"
-                  }`}
+                  className={`w-8 h-8 rounded cursor-pointer border-2 ${formData.primaryColor === color ? "border-white" : "border-gray-600"}`}
                   style={{ backgroundColor: color }}
                   title={color}
                 />
@@ -255,7 +259,7 @@ export default function CreateForm() {
               className="p-2 rounded bg-gray-800"
             >
               <option value="">Selecciona formato</option>
-              {formatOptions.map((f) => (
+              {["YouTube","Instagram","Facebook","TikTok"].map(f => (
                 <option key={f} value={f}>{f}</option>
               ))}
             </select>
@@ -279,10 +283,50 @@ export default function CreateForm() {
               className="p-2 rounded bg-gray-800"
             >
               <option value="">Selecciona nivel</option>
-              {clickbaitOptions.map((c) => (
+              {["25%","50%","75%","100%"].map(c => (
                 <option key={c} value={c}>{c}</option>
               ))}
             </select>
+          )}
+
+          {/* Subir foto de la cara */}
+          <label className="flex gap-2 items-center mt-3">
+            <input
+              type="checkbox"
+              name="faceImage"
+              checked={enabledFields.faceImage}
+              onChange={handleChange}
+            />
+            Subir foto de la cara
+          </label>
+          {enabledFields.faceImage && (
+            <input
+              type="file"
+              name="faceImage"
+              accept="image/*"
+              className="mt-2"
+              onChange={handleChange}
+            />
+          )}
+
+          {/* Elementos visuales - subir imagen */}
+          <label className="flex gap-2 items-center mt-3">
+            <input
+              type="checkbox"
+              name="visualElementsImage"
+              checked={enabledFields.visualElementsImage}
+              onChange={handleChange}
+            />
+            Elementos visuales (imagen)
+          </label>
+          {enabledFields.visualElementsImage && (
+            <input
+              type="file"
+              name="visualElementsImage"
+              accept="image/*"
+              className="mt-2"
+              onChange={handleChange}
+            />
           )}
         </div>
 
@@ -290,6 +334,7 @@ export default function CreateForm() {
         <div className="border p-4 rounded-lg">
           <h2 className="text-xl font-semibold mb-2">3️⃣ Puntos adicionales</h2>
 
+          {/* Número de caras */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -311,26 +356,7 @@ export default function CreateForm() {
             />
           )}
 
-          <label className="flex gap-2 items-center mt-3">
-            <input
-              type="checkbox"
-              name="visualElements"
-              checked={enabledFields.visualElements}
-              onChange={handleChange}
-            />
-            Elementos visuales
-          </label>
-          {enabledFields.visualElements && (
-            <input
-              type="text"
-              name="visualElements"
-              placeholder="Ejemplo: rayos, flechas, círculos"
-              className="p-2 w-full rounded bg-gray-800"
-              value={formData.visualElements}
-              onChange={handleChange}
-            />
-          )}
-
+          {/* Texto adicional */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -350,7 +376,7 @@ export default function CreateForm() {
             />
           )}
 
-          {/* Color del texto adicional */}
+          {/* Color del texto */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -362,13 +388,11 @@ export default function CreateForm() {
           </label>
           {enabledFields.textColor && (
             <div className="flex flex-wrap gap-2 mt-2">
-              {colorOptions.map((color) => (
+              {colorOptions.map(color => (
                 <div
                   key={color}
                   onClick={() => setFormData({ ...formData, textColor: color })}
-                  className={`w-8 h-8 rounded cursor-pointer border-2 ${
-                    formData.textColor === color ? "border-white" : "border-gray-600"
-                  }`}
+                  className={`w-8 h-8 rounded cursor-pointer border-2 ${formData.textColor === color ? "border-white" : "border-gray-600"}`}
                   style={{ backgroundColor: color }}
                   title={color}
                 />
@@ -376,6 +400,7 @@ export default function CreateForm() {
             </div>
           )}
 
+          {/* Número de miniaturas */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -397,6 +422,7 @@ export default function CreateForm() {
             />
           )}
 
+          {/* Plantilla */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
