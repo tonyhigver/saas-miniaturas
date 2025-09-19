@@ -12,8 +12,6 @@ export default function CreateForm() {
     category: "",
     videoPlot: "",
     titleText: "",
-    titleColor: "#FF0000",
-    mainColors: "#FF0000,#00FF00,#0000FF",
     format: "16:9",
     clickbaitLevel: "50",
     numFaces: 1,
@@ -27,8 +25,6 @@ export default function CreateForm() {
     category: false,
     videoPlot: false,
     titleText: false,
-    titleColor: false,
-    mainColors: false,
     format: false,
     clickbaitLevel: false,
     numFaces: false,
@@ -79,13 +75,6 @@ export default function CreateForm() {
       </div>
     );
   }
-
-  // Paleta de colores para selects visuales
-  const colorOptions = [
-    "#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF",
-    "#00FFFF", "#000000", "#FFFFFF", "#FFA500", "#800080",
-    "#008080", "#FFC0CB", "#808000", "#A52A2A"
-  ];
 
   return (
     <div className="min-h-screen bg-black text-white p-8">
@@ -207,56 +196,6 @@ export default function CreateForm() {
               value={formData.titleText}
               onChange={handleChange}
             />
-          )}
-
-          {/* Color del texto */}
-          <label className="flex gap-2 items-center mt-3">
-            <input
-              type="checkbox"
-              name="titleColor"
-              checked={enabledFields.titleColor}
-              onChange={handleChange}
-            />
-            Color del texto
-          </label>
-          {enabledFields.titleColor && (
-            <select
-              name="titleColor"
-              value={formData.titleColor}
-              onChange={handleChange}
-              className="p-2 rounded bg-gray-800"
-            >
-              {colorOptions.map((color) => (
-                <option key={color} value={color}>
-                  {color}
-                </option>
-              ))}
-            </select>
-          )}
-
-          {/* Colores principales */}
-          <label className="flex gap-2 items-center mt-3">
-            <input
-              type="checkbox"
-              name="mainColors"
-              checked={enabledFields.mainColors}
-              onChange={handleChange}
-            />
-            Colores principales
-          </label>
-          {enabledFields.mainColors && (
-            <select
-              name="mainColors"
-              value={formData.mainColors}
-              onChange={handleChange}
-              className="p-2 rounded bg-gray-800"
-            >
-              {colorOptions.map((color) => (
-                <option key={color} value={color}>
-                  {color}
-                </option>
-              ))}
-            </select>
           )}
 
           {/* Formato */}
