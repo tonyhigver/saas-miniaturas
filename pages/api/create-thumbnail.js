@@ -2,7 +2,7 @@
 import formidable from "formidable";
 import fetch from "node-fetch";
 
-// ⛔ Desactivar bodyParser de Next.js
+// ⛔ Desactivar bodyParser de Next.js porque usamos formidable
 export const config = {
   api: { bodyParser: false },
 };
@@ -12,25 +12,27 @@ const parseTextFields = (req) =>
   new Promise((resolve, reject) => {
     const form = formidable({
       multiples: false,
-      filter: () => false, // 🚫 Ignora archivos
+      // 🚫 Ignora archivos, solo se procesan campos de texto
+      filter: () => false,
     });
 
     const fieldsData = {};
 
+    // Captura los campos de texto
     form.on("field", (name, value) => {
-      console.log("🔹 Campo recibido:", name, value);
+      console.log("🔹 Campo de texto recibido:", name, value);
       fieldsData[name] = value;
     });
 
     form.on("error", (err) => {
-      console.error("❌ Error en formidable:", err);
+      console.error("❌ Error al parsear campos:", err);
       reject(err);
     });
 
     form.parse(req, (err) => {
       if (err) reject(err);
       else {
-        console.log("✅ Campos parseados:", fieldsData);
+        console.log("✅ Campos de texto parseados:", fieldsData);
         resolve(fieldsData);
       }
     });
@@ -42,10 +44,10 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 1️⃣ Parsear solo campos de texto
+    // 1️⃣ Parsear únicamente campos de texto
     const fields = await parseTextFields(req);
 
-    // 2️⃣ Normalizar datos en un JSON limpio
+    // 2️⃣ Normalizar a JSON limpio
     const jsonPayload = {};
     for (const key in fields) {
       if (Array.isArray(fields[key]) && fields[key].length === 1) {
@@ -57,7 +59,7 @@ export default async function handler(req, res) {
 
     console.log("🔄 JSON a enviar al backend:", jsonPayload);
 
-    // 3️⃣ Reenviar los datos al backend
+    // 3️⃣ Enviar los datos al backend
     const backendRes = await fetch("http://157.180.88.215:4000/create-thumbnail", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
