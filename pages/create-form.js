@@ -12,7 +12,6 @@ export default function CreateForm() {
     category: "",
     videoPlot: "",
     titleText: "",
-    format: "16:9",
     clickbaitLevel: "50",
     numFaces: 1,
     additionalText: "",
@@ -25,7 +24,6 @@ export default function CreateForm() {
     category: false,
     videoPlot: false,
     titleText: false,
-    format: false,
     clickbaitLevel: false,
     numFaces: false,
     additionalText: false,
@@ -196,29 +194,6 @@ export default function CreateForm() {
               value={formData.titleText}
               onChange={handleChange}
             />
-          )}
-
-          {/* Formato */}
-          <label className="flex gap-2 items-center mt-3">
-            <input
-              type="checkbox"
-              name="format"
-              checked={enabledFields.format}
-              onChange={handleChange}
-            />
-            Formato
-          </label>
-          {enabledFields.format && (
-            <select
-              name="format"
-              value={formData.format}
-              onChange={handleChange}
-              className="p-2 rounded bg-gray-800"
-            >
-              <option value="16:9">16:9</option>
-              <option value="4:3">4:3</option>
-              <option value="1:1">1:1</option>
-            </select>
           )}
 
           {/* Nivel de clickbait */}
