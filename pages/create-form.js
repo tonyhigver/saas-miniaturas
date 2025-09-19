@@ -13,7 +13,7 @@ export default function CreateForm() {
     videoPlot: "",
     titleText: "",
     titleColor: "#FF0000",
-    mainColors: "#FF0000,#00FF00,#0000FF",
+    mainColors: "#FF0000",
     format: "16:9",
     numFaces: 1,
     visualElements: "",
@@ -68,10 +68,12 @@ export default function CreateForm() {
     }
 
     try {
-      const res = await fetch("/api/create-thumbnail", {
+      const res = await fetch("/api/create-form", {
         method: "POST",
         body: fd,
       });
+
+      if (!res.ok) throw new Error(`Error HTTP: ${res.status}`);
 
       const data = await res.json();
       console.log("Respuesta del servidor:", data);
@@ -90,7 +92,15 @@ export default function CreateForm() {
     );
   }
 
-  const colorOptions = ["#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF", "#00FFFF"];
+  // 🎨 Opciones de colores y clickbait
+  const colorOptions = [
+    "#FF0000",
+    "#00FF00",
+    "#0000FF",
+    "#FFFF00",
+    "#FF00FF",
+    "#00FFFF",
+  ];
   const clickbaitOptions = ["25%", "50%", "75%", "100%"];
 
   return (
@@ -123,6 +133,7 @@ export default function CreateForm() {
         <div className="border p-4 rounded-lg">
           <h2 className="text-xl font-semibold mb-2">1️⃣ Extraer información</h2>
 
+          {/* Prompt */}
           <label className="flex gap-2 items-center">
             <input
               type="checkbox"
@@ -143,6 +154,7 @@ export default function CreateForm() {
             />
           )}
 
+          {/* Categoría */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -167,6 +179,7 @@ export default function CreateForm() {
             </select>
           )}
 
+          {/* Plot */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -191,6 +204,7 @@ export default function CreateForm() {
         <div className="border p-4 rounded-lg">
           <h2 className="text-xl font-semibold mb-2">2️⃣ Partes visuales</h2>
 
+          {/* Texto en la miniatura */}
           <label className="flex gap-2 items-center">
             <input
               type="checkbox"
@@ -211,7 +225,7 @@ export default function CreateForm() {
             />
           )}
 
-          {/* Selección de color de título */}
+          {/* Color del título */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -236,7 +250,7 @@ export default function CreateForm() {
             </select>
           )}
 
-          {/* Selección de colores principales */}
+          {/* Colores principales */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -396,7 +410,7 @@ export default function CreateForm() {
             />
           )}
 
-          {/* Plantilla base */}
+          {/* Plantilla */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
