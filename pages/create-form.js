@@ -10,48 +10,37 @@ export default function CreateForm() {
   const [formData, setFormData] = useState({
     description: "",
     category: "",
-    videoFile: null,
     videoPlot: "",
     titleText: "",
-    titleColor: "#FFFFFF",
-    mainColors: "",
-    referenceImages: [],
-    emojis: "",
+    titleColor: "#FF0000", // color inicial
+    mainColors: "#FF0000,#00FF00,#0000FF", // colores iniciales
     format: "16:9",
-    clickbaitLevel: 50,
     numFaces: 1,
     visualElements: "",
     additionalText: "",
     numResults: 3,
-    polarize: false,
     template: "",
   });
 
   const [enabledFields, setEnabledFields] = useState({
     description: false,
     category: false,
-    videoFile: false,
     videoPlot: false,
     titleText: false,
     titleColor: false,
     mainColors: false,
-    referenceImages: false,
-    emojis: false,
     format: false,
-    clickbaitLevel: false,
     numFaces: false,
     visualElements: false,
     additionalText: false,
     numResults: false,
-    polarize: false,
     template: false,
   });
 
   const handleChange = (e) => {
-    const { name, value, type, checked, files } = e.target;
-    if (type === "file") {
-      setFormData((prev) => ({ ...prev, [name]: files }));
-    } else if (type === "checkbox" && name in enabledFields) {
+    const { name, value, type, checked } = e.target;
+
+    if (type === "checkbox" && name in enabledFields) {
       setEnabledFields((prev) => ({ ...prev, [name]: checked }));
     } else if (type === "checkbox") {
       setFormData((prev) => ({ ...prev, [name]: checked }));
@@ -62,26 +51,16 @@ export default function CreateForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     const fd = new FormData();
 
-    // ⬅ Envío TODOS los campos y archivos, sin depender de enabledFields
     for (const key in formData) {
-      const value = formData[key];
-      if (value instanceof FileList) {
-        for (let i = 0; i < value.length; i++) {
-          fd.append(key, value[i], value[i].name);
-        }
-      } else if (Array.isArray(value)) {
-        value.forEach((v) => fd.append(key, v));
-      } else {
-        fd.append(key, value);
+      if (enabledFields[key]) {
+        fd.append(key, formData[key]);
       }
     }
 
-    // 🔍 LOG: Ver todo lo que se envía
     for (let pair of fd.entries()) {
-      console.log("🟢 Enviando desde el cliente:", pair[0], pair[1]);
+      console.log("➡ Enviando al API:", pair[0], pair[1]);
     }
 
     try {
@@ -92,7 +71,7 @@ export default function CreateForm() {
 
       const data = await res.json();
       console.log("Respuesta del servidor:", data);
-      alert("Miniaturas generadas correctamente. Revisa consola.");
+      alert("Miniaturas generadas correctamente. Revisa la consola.");
     } catch (err) {
       console.error("Error enviando formulario:", err);
       alert("Error al enviar los datos");
@@ -106,6 +85,9 @@ export default function CreateForm() {
       </div>
     );
   }
+
+  // Paleta de colores para seleccionar
+  const colorOptions = ["#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF", "#00FFFF"];
 
   return (
     <div className="min-h-screen bg-black text-white p-8">
@@ -133,7 +115,7 @@ export default function CreateForm() {
       </header>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-        {/* 1️⃣ Extraer info */}
+        {/* 1️⃣ Extraer información */}
         <div className="border p-4 rounded-lg">
           <h2 className="text-xl font-semibold mb-2">1️⃣ Extraer información</h2>
 
@@ -184,24 +166,6 @@ export default function CreateForm() {
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
-              name="videoFile"
-              checked={enabledFields.videoFile}
-              onChange={handleChange}
-            />
-            Subir video para analizar plot
-          </label>
-          {enabledFields.videoFile && (
-            <input
-              type="file"
-              name="videoFile"
-              accept="video/*"
-              onChange={handleChange}
-            />
-          )}
-
-          <label className="flex gap-2 items-center mt-3">
-            <input
-              type="checkbox"
               name="videoPlot"
               checked={enabledFields.videoPlot}
               onChange={handleChange}
@@ -243,6 +207,7 @@ export default function CreateForm() {
             />
           )}
 
+          {/* Selección de color de título */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -253,14 +218,21 @@ export default function CreateForm() {
             Color del texto
           </label>
           {enabledFields.titleColor && (
-            <input
-              type="color"
+            <select
               name="titleColor"
               value={formData.titleColor}
               onChange={handleChange}
-            />
+              className="p-2 rounded bg-gray-800"
+            >
+              {colorOptions.map((color) => (
+                <option key={color} value={color}>
+                  {color}
+                </option>
+              ))}
+            </select>
           )}
 
+          {/* Selección de colores principales */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -271,96 +243,24 @@ export default function CreateForm() {
             Colores principales
           </label>
           {enabledFields.mainColors && (
-            <input
-              type="text"
-              name="mainColors"
-              placeholder="Ejemplo: #FF0000, #00FF00"
-              className="p-2 w-full rounded bg-gray-800"
-              value={formData.mainColors}
-              onChange={handleChange}
-            />
-          )}
-
-          <label className="flex gap-2 items-center mt-3">
-            <input
-              type="checkbox"
-              name="referenceImages"
-              checked={enabledFields.referenceImages}
-              onChange={handleChange}
-            />
-            Imágenes de referencia
-          </label>
-          {enabledFields.referenceImages && (
-            <input
-              type="file"
-              name="referenceImages"
-              accept="image/*"
-              multiple
-              onChange={handleChange}
-            />
-          )}
-
-          <label className="flex gap-2 items-center mt-3">
-            <input
-              type="checkbox"
-              name="emojis"
-              checked={enabledFields.emojis}
-              onChange={handleChange}
-            />
-            Emojis o stickers
-          </label>
-          {enabledFields.emojis && (
-            <input
-              type="text"
-              name="emojis"
-              placeholder="Ejemplo: 😂🔥🎮"
-              className="p-2 w-full rounded bg-gray-800"
-              value={formData.emojis}
-              onChange={handleChange}
-            />
-          )}
-
-          <label className="flex gap-2 items-center mt-3">
-            <input
-              type="checkbox"
-              name="format"
-              checked={enabledFields.format}
-              onChange={handleChange}
-            />
-            Formato
-          </label>
-          {enabledFields.format && (
             <select
-              name="format"
-              value={formData.format}
+              name="mainColors"
+              value={formData.mainColors}
               onChange={handleChange}
               className="p-2 rounded bg-gray-800"
             >
-              <option value="16:9">16:9 (YouTube)</option>
-              <option value="1:1">1:1 (Instagram)</option>
-              <option value="9:16">9:16 (Shorts/TikTok)</option>
+              {colorOptions.map((color) => (
+                <option key={color} value={color}>
+                  {color}
+                </option>
+              ))}
             </select>
           )}
+        </div>
 
-          <label className="flex gap-2 items-center mt-3">
-            <input
-              type="checkbox"
-              name="clickbaitLevel"
-              checked={enabledFields.clickbaitLevel}
-              onChange={handleChange}
-            />
-            Nivel de clickbait
-          </label>
-          {enabledFields.clickbaitLevel && (
-            <input
-              type="range"
-              min="0"
-              max="100"
-              name="clickbaitLevel"
-              value={formData.clickbaitLevel}
-              onChange={handleChange}
-            />
-          )}
+        {/* 3️⃣ Puntos adicionales */}
+        <div className="border p-4 rounded-lg">
+          <h2 className="text-xl font-semibold mb-2">3️⃣ Puntos adicionales</h2>
 
           <label className="flex gap-2 items-center mt-3">
             <input
@@ -421,13 +321,8 @@ export default function CreateForm() {
               onChange={handleChange}
             />
           )}
-        </div>
 
-        {/* 3️⃣ Puntos adicionales */}
-        <div className="border p-4 rounded-lg">
-          <h2 className="text-xl font-semibold mb-2">3️⃣ Puntos adicionales</h2>
-
-          <label className="flex gap-2 items-center">
+          <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
               name="numResults"
@@ -446,27 +341,6 @@ export default function CreateForm() {
               value={formData.numResults}
               onChange={handleChange}
             />
-          )}
-
-          <label className="flex gap-2 items-center mt-3">
-            <input
-              type="checkbox"
-              name="polarize"
-              checked={enabledFields.polarize}
-              onChange={handleChange}
-            />
-            Polarización de resultados
-          </label>
-          {enabledFields.polarize && (
-            <label className="flex gap-2 items-center">
-              <input
-                type="checkbox"
-                name="polarize"
-                checked={formData.polarize}
-                onChange={handleChange}
-              />
-              Generar variantes muy diferentes
-            </label>
           )}
 
           <label className="flex gap-2 items-center mt-3">
