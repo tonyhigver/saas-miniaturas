@@ -1,6 +1,6 @@
 // pages/api/create-thumbnail.js
 import formidable from "formidable";
-import { FormData } from "formdata-node";
+import fs from "fs";
 import fetch from "node-fetch";
 
 // ⛔ Desactivar bodyParser de Next.js
@@ -13,14 +13,21 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Método no permitido" });
   }
 
-  // Configuración de formidable solo para campos de texto
-  const form = formidable({ multiples: false });
+  const form = formidable({ multiples: true });
 
   const parseForm = (req) =>
     new Promise((resolve, reject) => {
-      // Depuración: mostrar cada campo recibido
+      const fields = {};
+      const files = {};
+
       form.on("field", (name, value) => {
         console.log("🔹 Campo recibido:", name, value);
+        fields[name] = value;
+      });
+
+      form.on("file", (name, file) => {
+        console.log("📎 Archivo recibido:", name, file.originalFilename);
+        files[name] = file;
       });
 
       form.on("error", (err) => {
@@ -28,36 +35,38 @@ export default async function handler(req, res) {
         reject(err);
       });
 
-      form.parse(req, (err, fields) => {
-        if (err) reject(err);
-        else {
-          console.log("✅ Todos los campos parseados:", fields);
-          resolve(fields);
-        }
-      });
+      form.parse(req, () => resolve({ fields, files }));
     });
 
   try {
-    const fields = await parseForm(req);
+    const { fields, files } = await parseForm(req);
 
-    // Convertimos todo a JSON limpio antes de reenviar
-    const jsonPayload = {};
+    console.log("✅ Campos parseados:", fields);
+    console.log("✅ Archivos parseados:", files);
+
+    // Crear FormData para reenviar al backend
+    const formData = new (require("formdata-node").FormData)();
+
+    // Agregar campos de texto
     for (const key in fields) {
-      // Si es un array con un solo valor, convertir a string
-      if (Array.isArray(fields[key]) && fields[key].length === 1) {
-        jsonPayload[key] = fields[key][0];
-      } else {
-        jsonPayload[key] = fields[key];
-      }
+      formData.append(key, fields[key]);
     }
 
-    console.log("🔄 JSON a enviar al backend:", jsonPayload);
+    // Agregar archivos
+    for (const key in files) {
+      const file = files[key];
+      formData.append(
+        key,
+        fs.createReadStream(file.filepath),
+        file.originalFilename
+      );
+    }
 
-    // Enviar al backend como JSON
+    // Enviar al backend
     const backendRes = await fetch("http://157.180.88.215:4000/create-thumbnail", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(jsonPayload),
+      body: formData,
+      headers: formData.getHeaders ? formData.getHeaders() : {}, // Node-fetch necesita headers de multipart
     });
 
     const backendData = await backendRes.json();
