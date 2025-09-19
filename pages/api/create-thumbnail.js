@@ -1,7 +1,9 @@
 // pages/api/create-thumbnail.js
 import formidable from "formidable";
 import { FormData } from "formdata-node";
+import { fileFromPath } from "formdata-node/file-from-path";
 import fetch from "node-fetch";
+import fs from "fs";
 
 // ⛔ Desactivar bodyParser de Next.js
 export const config = {
@@ -13,14 +15,23 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Método no permitido" });
   }
 
-  // Configuración de formidable solo para campos de texto
-  const form = formidable({ multiples: false });
+  // Configuración de formidable para texto + archivos
+  const form = formidable({
+    multiples: true,
+    keepExtensions: true,
+  });
 
   const parseForm = (req) =>
     new Promise((resolve, reject) => {
-      // Depuración: mostrar cada campo recibido
+      let fieldsCollected = {};
+      let filesCollected = {};
+
       form.on("field", (name, value) => {
-        console.log("🔹 Campo recibido:", name, value);
+        console.log("📩 Campo recibido:", name, value);
+      });
+
+      form.on("file", (name, file) => {
+        console.log("📂 Archivo recibido:", name, file.originalFilename);
       });
 
       form.on("error", (err) => {
@@ -28,42 +39,58 @@ export default async function handler(req, res) {
         reject(err);
       });
 
-      form.parse(req, (err, fields) => {
+      form.parse(req, (err, fields, files) => {
         if (err) reject(err);
         else {
-          console.log("✅ Todos los campos parseados:", fields);
-          resolve(fields);
+          console.log("✅ Campos parseados:", fields);
+          console.log("✅ Archivos parseados:", files);
+          resolve({ fields, files });
         }
       });
     });
 
   try {
-    const fields = await parseForm(req);
+    const { fields, files } = await parseForm(req);
 
-    // Convertimos todo a JSON limpio antes de reenviar
-    const jsonPayload = {};
+    // Creamos el FormData que se enviará al backend
+    const formData = new FormData();
+
+    // Añadir campos de texto
     for (const key in fields) {
-      // Si es un array con un solo valor, convertir a string
       if (Array.isArray(fields[key]) && fields[key].length === 1) {
-        jsonPayload[key] = fields[key][0];
+        formData.append(key, fields[key][0]);
       } else {
-        jsonPayload[key] = fields[key];
+        formData.append(key, fields[key]);
       }
     }
 
-    console.log("🔄 JSON a enviar al backend:", jsonPayload);
+    // Añadir archivos (ej. imagen de caras)
+    for (const key in files) {
+      const file = files[key];
+      if (Array.isArray(file)) {
+        for (const f of file) {
+          formData.append(key, await fileFromPath(f.filepath));
+        }
+      } else {
+        formData.append(key, await fileFromPath(file.filepath));
+      }
+    }
 
-    // Enviar al backend como JSON
+    // Mostrar lo que se va a enviar al backend
+    for (const pair of formData.entries()) {
+      console.log("🔄 Reenviando al backend:", pair[0], pair[1]);
+    }
+
+    // Enviar al backend como multipart/form-data
     const backendRes = await fetch("http://157.180.88.215:4000/create-thumbnail", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(jsonPayload),
+      body: formData,
     });
 
     const backendData = await backendRes.json();
 
     return res.status(200).json({
-      message: "Formulario recibido y reenviado ✅",
+      message: "Formulario con texto e imagen recibido y reenviado ✅",
       backendResponse: backendData,
     });
   } catch (error) {
