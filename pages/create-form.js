@@ -10,13 +10,16 @@ export default function CreateForm() {
   const [formData, setFormData] = useState({
     description: "",
     category: "",
+    videoFile: null,
     videoPlot: "",
     titleText: "",
-    titleColor: "#FF0000", // color inicial
-    mainColors: "#FF0000,#00FF00,#0000FF", // colores iniciales
+    titleColor: "#FF0000",
+    mainColors: "#FF0000,#00FF00,#0000FF",
+    referenceImages: null,
     format: "16:9",
+    clickbaitLevel: "50",
     numFaces: 1,
-    visualElements: "",
+    visualElements: null,
     additionalText: "",
     numResults: 3,
     template: "",
@@ -25,11 +28,14 @@ export default function CreateForm() {
   const [enabledFields, setEnabledFields] = useState({
     description: false,
     category: false,
+    videoFile: false,
     videoPlot: false,
     titleText: false,
     titleColor: false,
     mainColors: false,
+    referenceImages: false,
     format: false,
+    clickbaitLevel: false,
     numFaces: false,
     visualElements: false,
     additionalText: false,
@@ -38,12 +44,12 @@ export default function CreateForm() {
   });
 
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value, type, checked, files } = e.target;
 
     if (type === "checkbox" && name in enabledFields) {
       setEnabledFields((prev) => ({ ...prev, [name]: checked }));
-    } else if (type === "checkbox") {
-      setFormData((prev) => ({ ...prev, [name]: checked }));
+    } else if (type === "file") {
+      setFormData((prev) => ({ ...prev, [name]: files }));
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
@@ -55,12 +61,14 @@ export default function CreateForm() {
 
     for (const key in formData) {
       if (enabledFields[key]) {
-        fd.append(key, formData[key]);
+        if (formData[key] instanceof FileList) {
+          for (let file of formData[key]) {
+            fd.append(key, file);
+          }
+        } else {
+          fd.append(key, formData[key]);
+        }
       }
-    }
-
-    for (let pair of fd.entries()) {
-      console.log("➡ Enviando al API:", pair[0], pair[1]);
     }
 
     try {
@@ -70,10 +78,10 @@ export default function CreateForm() {
       });
 
       const data = await res.json();
-      console.log("Respuesta del servidor:", data);
+      console.log("✅ Respuesta del servidor:", data);
       alert("Miniaturas generadas correctamente. Revisa la consola.");
     } catch (err) {
-      console.error("Error enviando formulario:", err);
+      console.error("❌ Error enviando formulario:", err);
       alert("Error al enviar los datos");
     }
   };
@@ -86,8 +94,12 @@ export default function CreateForm() {
     );
   }
 
-  // Paleta de colores para seleccionar
-  const colorOptions = ["#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF", "#00FFFF"];
+  // Paleta de colores para selects visuales
+  const colorOptions = [
+    "#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF",
+    "#00FFFF", "#000000", "#FFFFFF", "#FFA500", "#800080",
+    "#008080", "#FFC0CB", "#808000", "#A52A2A"
+  ];
 
   return (
     <div className="min-h-screen bg-black text-white p-8">
@@ -119,14 +131,35 @@ export default function CreateForm() {
         <div className="border p-4 rounded-lg">
           <h2 className="text-xl font-semibold mb-2">1️⃣ Extraer información</h2>
 
+          {/* Subir video */}
           <label className="flex gap-2 items-center">
+            <input
+              type="checkbox"
+              name="videoFile"
+              checked={enabledFields.videoFile}
+              onChange={handleChange}
+            />
+            Subir video para analizar plot
+          </label>
+          {enabledFields.videoFile && (
+            <input
+              type="file"
+              name="videoFile"
+              accept="video/*"
+              className="p-2 w-full rounded bg-gray-800"
+              onChange={handleChange}
+            />
+          )}
+
+          {/* Descripción */}
+          <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
               name="description"
               checked={enabledFields.description}
               onChange={handleChange}
             />
-            Prompt / Descripción de la miniatura
+            Prompt / Descripción
           </label>
           {enabledFields.description && (
             <input
@@ -139,6 +172,7 @@ export default function CreateForm() {
             />
           )}
 
+          {/* Categoría */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -163,6 +197,7 @@ export default function CreateForm() {
             </select>
           )}
 
+          {/* Plot */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -187,6 +222,7 @@ export default function CreateForm() {
         <div className="border p-4 rounded-lg">
           <h2 className="text-xl font-semibold mb-2">2️⃣ Partes visuales</h2>
 
+          {/* Texto miniatura */}
           <label className="flex gap-2 items-center">
             <input
               type="checkbox"
@@ -207,7 +243,7 @@ export default function CreateForm() {
             />
           )}
 
-          {/* Selección de color de título */}
+          {/* Color del texto */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -232,7 +268,7 @@ export default function CreateForm() {
             </select>
           )}
 
-          {/* Selección de colores principales */}
+          {/* Colores principales */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -256,12 +292,81 @@ export default function CreateForm() {
               ))}
             </select>
           )}
+
+          {/* Imágenes de referencia */}
+          <label className="flex gap-2 items-center mt-3">
+            <input
+              type="checkbox"
+              name="referenceImages"
+              checked={enabledFields.referenceImages}
+              onChange={handleChange}
+            />
+            Imágenes de referencia
+          </label>
+          {enabledFields.referenceImages && (
+            <input
+              type="file"
+              name="referenceImages"
+              accept="image/*"
+              multiple
+              className="p-2 w-full rounded bg-gray-800"
+              onChange={handleChange}
+            />
+          )}
+
+          {/* Formato */}
+          <label className="flex gap-2 items-center mt-3">
+            <input
+              type="checkbox"
+              name="format"
+              checked={enabledFields.format}
+              onChange={handleChange}
+            />
+            Formato
+          </label>
+          {enabledFields.format && (
+            <select
+              name="format"
+              value={formData.format}
+              onChange={handleChange}
+              className="p-2 rounded bg-gray-800"
+            >
+              <option value="16:9">16:9</option>
+              <option value="4:3">4:3</option>
+              <option value="1:1">1:1</option>
+            </select>
+          )}
+
+          {/* Nivel de clickbait */}
+          <label className="flex gap-2 items-center mt-3">
+            <input
+              type="checkbox"
+              name="clickbaitLevel"
+              checked={enabledFields.clickbaitLevel}
+              onChange={handleChange}
+            />
+            Nivel de clickbait
+          </label>
+          {enabledFields.clickbaitLevel && (
+            <select
+              name="clickbaitLevel"
+              value={formData.clickbaitLevel}
+              onChange={handleChange}
+              className="p-2 rounded bg-gray-800"
+            >
+              <option value="25">25%</option>
+              <option value="50">50%</option>
+              <option value="75">75%</option>
+              <option value="100">100%</option>
+            </select>
+          )}
         </div>
 
         {/* 3️⃣ Puntos adicionales */}
         <div className="border p-4 rounded-lg">
           <h2 className="text-xl font-semibold mb-2">3️⃣ Puntos adicionales</h2>
 
+          {/* Número de caras */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -272,17 +377,21 @@ export default function CreateForm() {
             Número de caras
           </label>
           {enabledFields.numFaces && (
-            <input
-              type="number"
-              min="0"
-              max="10"
+            <select
               name="numFaces"
-              className="p-2 rounded bg-gray-800"
               value={formData.numFaces}
               onChange={handleChange}
-            />
+              className="p-2 rounded bg-gray-800"
+            >
+              {[0, 1, 2, 3, 4, 5].map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
           )}
 
+          {/* Elementos visuales */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -294,15 +403,16 @@ export default function CreateForm() {
           </label>
           {enabledFields.visualElements && (
             <input
-              type="text"
+              type="file"
               name="visualElements"
-              placeholder="Ejemplo: rayos, flechas, círculos"
+              accept="image/*"
+              multiple
               className="p-2 w-full rounded bg-gray-800"
-              value={formData.visualElements}
               onChange={handleChange}
             />
           )}
 
+          {/* Texto adicional */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -322,6 +432,7 @@ export default function CreateForm() {
             />
           )}
 
+          {/* Número de miniaturas */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -339,26 +450,6 @@ export default function CreateForm() {
               name="numResults"
               className="p-2 rounded bg-gray-800"
               value={formData.numResults}
-              onChange={handleChange}
-            />
-          )}
-
-          <label className="flex gap-2 items-center mt-3">
-            <input
-              type="checkbox"
-              name="template"
-              checked={enabledFields.template}
-              onChange={handleChange}
-            />
-            Plantilla base
-          </label>
-          {enabledFields.template && (
-            <input
-              type="text"
-              name="template"
-              placeholder="Ejemplo: Plantilla inspirada en MrBeast"
-              className="p-2 w-full rounded bg-gray-800"
-              value={formData.template}
               onChange={handleChange}
             />
           )}
