@@ -1,6 +1,8 @@
 // pages/api/create-thumbnail.js
 import formidable from "formidable";
+import Busboy from "busboy";
 import fs from "fs";
+import path from "path";
 import fetch from "node-fetch";
 
 // ⛔ Desactivar bodyParser de Next.js
@@ -13,70 +15,98 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Método no permitido" });
   }
 
-  const form = formidable({ multiples: true });
+  try {
+    // ----------------------------
+    // 1️⃣ Procesar campos de texto
+    // ----------------------------
+    const form = formidable({ multiples: false });
 
-  const parseForm = (req) =>
-    new Promise((resolve, reject) => {
-      const fields = {};
-      const files = {};
+    const textFields = await new Promise((resolve, reject) => {
+      const fieldsObj = {};
 
       form.on("field", (name, value) => {
-        console.log("🔹 Campo recibido:", name, value);
-        fields[name] = value;
-      });
-
-      form.on("file", (name, file) => {
-        console.log("📎 Archivo recibido:", name, file.originalFilename);
-        files[name] = file;
+        console.log("🔹 Campo de texto recibido:", name, value);
+        fieldsObj[name] = value;
       });
 
       form.on("error", (err) => {
-        console.error("❌ Error de Formidable:", err);
+        console.error("❌ Error en Formidable:", err);
         reject(err);
       });
 
-      form.parse(req, () => resolve({ fields, files }));
+      form.parse(req, (err, fields) => {
+        if (err) reject(err);
+        else resolve(fieldsObj);
+      });
     });
 
-  try {
-    const { fields, files } = await parseForm(req);
+    // ----------------------------
+    // 2️⃣ Procesar archivos (imágenes/video)
+    // ----------------------------
+    const busboy = new Busboy({ headers: req.headers });
+    const uploadedFiles = [];
 
-    console.log("✅ Campos parseados:", fields);
-    console.log("✅ Archivos parseados:", files);
+    const filesPromise = new Promise((resolve, reject) => {
+      busboy.on("file", (fieldname, file, filename, encoding, mimetype) => {
+        console.log(`📎 Archivo recibido: ${filename} (${mimetype})`);
 
-    // Crear FormData para reenviar al backend
-    const formData = new (require("formdata-node").FormData)();
+        const saveTo = path.join("/tmp", filename);
+        const writeStream = fs.createWriteStream(saveTo);
+        file.pipe(writeStream);
+
+        file.on("end", () => {
+          uploadedFiles.push({ fieldname, path: saveTo, filename, mimetype });
+        });
+      });
+
+      busboy.on("error", (err) => {
+        console.error("❌ Error en Busboy:", err);
+        reject(err);
+      });
+
+      busboy.on("finish", () => {
+        resolve(uploadedFiles);
+      });
+
+      req.pipe(busboy);
+    });
+
+    const files = await filesPromise;
+
+    // ----------------------------
+    // 3️⃣ Preparar FormData para enviar al backend
+    // ----------------------------
+    const { FormData } = require("formdata-node");
+    const formData = new FormData();
 
     // Agregar campos de texto
-    for (const key in fields) {
-      formData.append(key, fields[key]);
+    for (const key in textFields) {
+      formData.append(key, textFields[key]);
     }
 
     // Agregar archivos
-    for (const key in files) {
-      const file = files[key];
-      formData.append(
-        key,
-        fs.createReadStream(file.filepath),
-        file.originalFilename
-      );
-    }
+    files.forEach((file) => {
+      formData.append(file.fieldname, fs.createReadStream(file.path), file.filename);
+    });
 
     // Enviar al backend
     const backendRes = await fetch("http://157.180.88.215:4000/create-thumbnail", {
       method: "POST",
       body: formData,
-      headers: formData.getHeaders ? formData.getHeaders() : {}, // Node-fetch necesita headers de multipart
+      headers: formData.getHeaders ? formData.getHeaders() : {},
     });
 
     const backendData = await backendRes.json();
 
+    // Limpiar archivos temporales
+    files.forEach((file) => fs.unlinkSync(file.path));
+
     return res.status(200).json({
-      message: "Formulario recibido y reenviado ✅",
+      message: "Formulario y archivos enviados correctamente ✅",
       backendResponse: backendData,
     });
   } catch (error) {
-    console.error("❌ Error procesando el formulario:", error);
+    console.error("❌ Error procesando formulario y archivos:", error);
     return res.status(500).json({ error: "Error en el servidor" });
   }
 }
