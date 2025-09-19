@@ -12,6 +12,7 @@ export default function CreateForm() {
     category: "",
     videoPlot: "",
     titleText: "",
+    primaryColor: "#FF0000",
     numFaces: 1,
     visualElements: "",
     additionalText: "",
@@ -25,6 +26,7 @@ export default function CreateForm() {
     category: false,
     videoPlot: false,
     titleText: false,
+    primaryColor: false,
     numFaces: false,
     visualElements: false,
     additionalText: false,
@@ -76,7 +78,7 @@ export default function CreateForm() {
     );
   }
 
-  // Colores para mostrar visualmente
+  // Colores disponibles para la paleta
   const colorOptions = [
     "#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF", "#00FFFF",
     "#000000", "#FFFFFF", "#FFA500", "#800080", "#008080", "#FFC0CB",
@@ -109,6 +111,7 @@ export default function CreateForm() {
       </header>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+
         {/* 1️⃣ Extraer información */}
         <div className="border p-4 rounded-lg">
           <h2 className="text-xl font-semibold mb-2">1️⃣ Extraer información</h2>
@@ -200,6 +203,32 @@ export default function CreateForm() {
               onChange={handleChange}
             />
           )}
+
+          {/* NUEVO: Color primario de la miniatura */}
+          <label className="flex gap-2 items-center mt-3">
+            <input
+              type="checkbox"
+              name="primaryColor"
+              checked={enabledFields.primaryColor}
+              onChange={handleChange}
+            />
+            Color primario de la miniatura
+          </label>
+          {enabledFields.primaryColor && (
+            <div className="flex flex-wrap gap-2 mt-2">
+              {colorOptions.map((color) => (
+                <div
+                  key={color}
+                  onClick={() => setFormData({ ...formData, primaryColor: color })}
+                  className={`w-8 h-8 rounded cursor-pointer border-2 ${
+                    formData.primaryColor === color ? "border-white" : "border-gray-600"
+                  }`}
+                  style={{ backgroundColor: color }}
+                  title={color}
+                ></div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* 3️⃣ Puntos adicionales */}
@@ -266,7 +295,7 @@ export default function CreateForm() {
             />
           )}
 
-          {/* NUEVO: Selección de color de texto */}
+          {/* Color del texto adicional */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
