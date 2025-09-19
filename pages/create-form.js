@@ -48,19 +48,18 @@ export default function CreateForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Crear un objeto JSON solo con campos habilitados
-    const payload = {};
+    // ✅ Usar FormData para enviar los datos al backend como antes
+    const fd = new FormData();
     for (const key in formData) {
       if (enabledFields[key]) {
-        payload[key] = formData[key];
+        fd.append(key, formData[key]);
       }
     }
 
     try {
       const res = await fetch("/api/create-thumbnail", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: fd, // <-- importante: NO JSON
       });
 
       const data = await res.json();
@@ -113,7 +112,6 @@ export default function CreateForm() {
       </header>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-
         {/* 1️⃣ Extraer información */}
         <div className="border p-4 rounded-lg">
           <h2 className="text-xl font-semibold mb-2">1️⃣ Extraer información</h2>
