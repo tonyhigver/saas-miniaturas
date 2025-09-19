@@ -7,13 +7,12 @@ export const config = {
   api: { bodyParser: false },
 };
 
-// Función auxiliar para parsear SOLO los campos de texto
+// 📌 Función auxiliar para parsear SOLO campos de texto
 const parseTextFields = (req) =>
   new Promise((resolve, reject) => {
     const form = formidable({
       multiples: false,
-      // 🚫 Bloquear archivos: formidable ignorará todo lo que sea file
-      filter: () => false,
+      filter: () => false, // 🚫 Ignora archivos
     });
 
     const fieldsData = {};
@@ -31,7 +30,7 @@ const parseTextFields = (req) =>
     form.parse(req, (err) => {
       if (err) reject(err);
       else {
-        console.log("✅ Campos de texto parseados:", fieldsData);
+        console.log("✅ Campos parseados:", fieldsData);
         resolve(fieldsData);
       }
     });
@@ -43,10 +42,10 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 1️⃣ Parsear únicamente texto (ignora archivos)
+    // 1️⃣ Parsear solo campos de texto
     const fields = await parseTextFields(req);
 
-    // 2️⃣ Normalizar datos a JSON limpio
+    // 2️⃣ Normalizar datos en un JSON limpio
     const jsonPayload = {};
     for (const key in fields) {
       if (Array.isArray(fields[key]) && fields[key].length === 1) {
@@ -58,7 +57,7 @@ export default async function handler(req, res) {
 
     console.log("🔄 JSON a enviar al backend:", jsonPayload);
 
-    // 3️⃣ Reenviar los datos al backend (SOLO texto)
+    // 3️⃣ Reenviar los datos al backend
     const backendRes = await fetch("http://157.180.88.215:4000/create-thumbnail", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
