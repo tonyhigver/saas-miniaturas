@@ -19,6 +19,8 @@ export default function CreateForm() {
     textColor: "#FF0000",
     numResults: 3,
     template: "",
+    format: "",       // nuevo campo
+    clickbait: "",    // nuevo campo
   });
 
   const [enabledFields, setEnabledFields] = useState({
@@ -33,6 +35,8 @@ export default function CreateForm() {
     textColor: false,
     numResults: false,
     template: false,
+    format: false,    // nuevo
+    clickbait: false, // nuevo
   });
 
   const handleChange = (e) => {
@@ -48,18 +52,18 @@ export default function CreateForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Usar FormData para enviar los campos habilitados
-    const fd = new FormData();
+    const payload = {};
     for (const key in formData) {
       if (enabledFields[key]) {
-        fd.append(key, formData[key]);
+        payload[key] = formData[key];
       }
     }
 
     try {
       const res = await fetch("/api/create-thumbnail", {
         method: "POST",
-        body: fd, // 👈 FormData para evitar el error 500
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
@@ -79,12 +83,14 @@ export default function CreateForm() {
     );
   }
 
-  // Paleta de colores disponible
   const colorOptions = [
     "#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF", "#00FFFF",
     "#000000", "#FFFFFF", "#FFA500", "#800080", "#008080", "#FFC0CB",
     "#808000", "#A52A2A", "#ADD8E6", "#F0E68C", "#D2691E", "#B22222"
   ];
+
+  const formatOptions = ["YouTube", "Instagram", "Facebook", "TikTok"];
+  const clickbaitOptions = ["25%", "50%", "75%", "100%"];
 
   return (
     <div className="min-h-screen bg-black text-white p-8">
@@ -229,6 +235,54 @@ export default function CreateForm() {
                 />
               ))}
             </div>
+          )}
+
+          {/* Formato */}
+          <label className="flex gap-2 items-center mt-3">
+            <input
+              type="checkbox"
+              name="format"
+              checked={enabledFields.format}
+              onChange={handleChange}
+            />
+            Formato
+          </label>
+          {enabledFields.format && (
+            <select
+              name="format"
+              value={formData.format}
+              onChange={handleChange}
+              className="p-2 rounded bg-gray-800"
+            >
+              <option value="">Selecciona formato</option>
+              {formatOptions.map((f) => (
+                <option key={f} value={f}>{f}</option>
+              ))}
+            </select>
+          )}
+
+          {/* Nivel de clickbait */}
+          <label className="flex gap-2 items-center mt-3">
+            <input
+              type="checkbox"
+              name="clickbait"
+              checked={enabledFields.clickbait}
+              onChange={handleChange}
+            />
+            Nivel de Clickbait
+          </label>
+          {enabledFields.clickbait && (
+            <select
+              name="clickbait"
+              value={formData.clickbait}
+              onChange={handleChange}
+              className="p-2 rounded bg-gray-800"
+            >
+              <option value="">Selecciona nivel</option>
+              {clickbaitOptions.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
           )}
         </div>
 
