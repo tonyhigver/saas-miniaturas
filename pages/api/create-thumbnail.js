@@ -9,13 +9,30 @@ export const config = {
   api: { bodyParser: false },
 };
 
-// Función auxiliar para parsear multiparty con promesas
+// Función auxiliar para parsear multiparty usando promesas
 const parseForm = (req) =>
   new Promise((resolve, reject) => {
     const form = new multiparty.Form();
+
+    // Opcional: establecer límite de tamaño de archivo
+    form.maxFilesSize = 10 * 1024 * 1024; // 10 MB por archivo
+
     form.parse(req, (err, fields, files) => {
       if (err) return reject(err);
-      resolve({ fields, files });
+
+      // Normalizar campos y archivos
+      const normalizedFields = {};
+      const normalizedFiles = {};
+
+      for (const key in fields) {
+        normalizedFields[key] = fields[key].length === 1 ? fields[key][0] : fields[key];
+      }
+
+      for (const key in files) {
+        normalizedFiles[key] = files[key];
+      }
+
+      resolve({ fields: normalizedFields, files: normalizedFiles });
     });
   });
 
@@ -25,7 +42,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Parsear formulario (texto + archivos)
+    // Parsear el formulario
     const { fields, files } = await parseForm(req);
 
     console.log("📩 Campos recibidos:", fields);
@@ -36,20 +53,27 @@ export default async function handler(req, res) {
 
     // Añadir campos de texto
     for (const key in fields) {
-      fields[key].forEach((val) => formData.append(key, val));
+      const value = fields[key];
+      if (Array.isArray(value)) {
+        value.forEach((v) => formData.append(key, v));
+      } else {
+        formData.append(key, value);
+      }
     }
 
-    // Añadir archivos (imagen de la cara u otros)
+    // Añadir archivos
     for (const key in files) {
       files[key].forEach((file) => {
-        formData.append(
-          key,
-          fs.createReadStream(file.path),
-          {
-            filename: file.originalFilename,
-            contentType: file.headers["content-type"],
-          }
-        );
+        // Asegurarse que el archivo existe
+        if (fs.existsSync(file.path)) {
+          formData.append(
+            key,
+            fs.createReadStream(file.path),
+            { filename: file.originalFilename, contentType: file.headers["content-type"] }
+          );
+        } else {
+          console.warn(`⚠ Archivo no encontrado: ${file.path}`);
+        }
       });
     }
 
@@ -59,8 +83,15 @@ export default async function handler(req, res) {
     const backendRes = await fetch("http://157.180.88.215:4000/create-thumbnail", {
       method: "POST",
       body: formData,
-      headers: formData.getHeaders(), // importante para multipart/form-data
+      headers: formData.getHeaders(),
     });
+
+    // Validar respuesta del backend
+    if (!backendRes.ok) {
+      const text = await backendRes.text();
+      console.error("❌ Error del backend:", text);
+      return res.status(500).json({ error: "Error en el backend", details: text });
+    }
 
     const backendData = await backendRes.json();
 
@@ -70,6 +101,6 @@ export default async function handler(req, res) {
     });
   } catch (err) {
     console.error("❌ Error procesando el formulario:", err);
-    return res.status(500).json({ error: "Error en el servidor" });
+    return res.status(500).json({ error: "Error en el servidor", details: err.message });
   }
 }
