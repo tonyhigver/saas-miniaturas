@@ -1,5 +1,4 @@
 // pages/api/create-thumbnail.js
-import formidable from "formidable";
 import FormData from "form-data";
 import fetch from "node-fetch";
 
@@ -14,52 +13,36 @@ export default async function handler(req, res) {
   }
 
   try {
-    // --- 1) Parsear SOLO campos de texto con formidable ---
-    const form = formidable({ multiples: false });
-
-    const parseFields = () =>
-      new Promise((resolve, reject) => {
-        form.on("field", (name, value) => {
-          console.log("🔹 Campo recibido:", name, value);
-        });
-
-        form.on("error", (err) => reject(err));
-
-        form.parse(req, (err, fields) => {
-          if (err) reject(err);
-          else resolve(fields);
-        });
-      });
-
-    const fields = await parseFields();
-
-    // Convertimos los campos en JSON limpio
-    const jsonPayload = {};
-    for (const key in fields) {
-      if (Array.isArray(fields[key]) && fields[key].length === 1) {
-        jsonPayload[key] = fields[key][0];
-      } else {
-        jsonPayload[key] = fields[key];
-      }
-    }
-    console.log("✅ Campos de texto parseados:", jsonPayload);
-
-    // --- 2) Leer el request completo como buffer (para archivos binarios) ---
+    // --- 1) Leer request completo como buffer ---
     const chunks = [];
     for await (const chunk of req) {
       chunks.push(chunk);
     }
     const buffer = Buffer.concat(chunks);
 
-    // --- 3) Crear FormData con texto + archivos ---
-    const formData = new FormData();
-
-    // Añadimos primero el texto
-    for (const key in jsonPayload) {
-      formData.append(key, jsonPayload[key]);
+    // --- 2) Extraer cabeceras personalizadas (texto enviado desde el cliente) ---
+    // 💡 Aquí asumo que el frontend envía los campos en headers como JSON o algo similar.
+    // Si los mandas en otra parte, ajustamos.
+    let fields = {};
+    if (req.headers["x-fields"]) {
+      try {
+        fields = JSON.parse(req.headers["x-fields"]);
+      } catch (e) {
+        console.warn("⚠️ No se pudo parsear x-fields como JSON");
+      }
     }
 
-    // Añadimos el archivo binario (imagen/video)
+    console.log("✅ Campos de texto recibidos:", fields);
+
+    // --- 3) Crear FormData con texto + archivo ---
+    const formData = new FormData();
+
+    // Añadir texto
+    for (const key in fields) {
+      formData.append(key, fields[key]);
+    }
+
+    // Añadir archivo binario (imagen/video)
     formData.append("file", buffer, {
       filename: req.headers["x-file-name"] || "upload.bin",
       contentType: req.headers["content-type"] || "application/octet-stream",
@@ -75,7 +58,7 @@ export default async function handler(req, res) {
     const backendData = await backendRes.json();
 
     return res.status(200).json({
-      message: "Formulario y archivos enviados correctamente ✅",
+      message: "Formulario y archivo enviados correctamente ✅",
       backendResponse: backendData,
     });
   } catch (error) {
