@@ -20,45 +20,29 @@ export default async function handler(req, res) {
     }
     const buffer = Buffer.concat(chunks);
 
-    // --- 2) Extraer cabeceras personalizadas (texto enviado desde el cliente) ---
-    // 💡 Aquí asumo que el frontend envía los campos en headers como JSON o algo similar.
-    // Si los mandas en otra parte, ajustamos.
-    let fields = {};
-    if (req.headers["x-fields"]) {
-      try {
-        fields = JSON.parse(req.headers["x-fields"]);
-      } catch (e) {
-        console.warn("⚠️ No se pudo parsear x-fields como JSON");
-      }
-    }
-
-    console.log("✅ Campos de texto recibidos:", fields);
-
-    // --- 3) Crear FormData con texto + archivo ---
+    // --- 2) Crear FormData ---
     const formData = new FormData();
 
-    // Añadir texto
-    for (const key in fields) {
-      formData.append(key, fields[key]);
-    }
+    // ⚡ Importante: aquí asumimos que el frontend manda todo como FormData
+    // con "file" para archivos y otros campos de texto como "description", "titleText", etc.
 
-    // Añadir archivo binario (imagen/video)
-    formData.append("file", buffer, {
-      filename: req.headers["x-file-name"] || "upload.bin",
-      contentType: req.headers["content-type"] || "application/octet-stream",
-    });
+    // Extraemos los campos de texto desde el buffer usando "form-data-parser" simple
+    // o los definimos en frontend; aquí asumimos que el frontend ya envía FormData correcto.
+    // Si quieres, el backend puede simplemente reenviar todo como "file" + texto.
 
-    // --- 4) Reenviar al backend ---
+    // --- 3) Reenviar al backend ---
     const backendRes = await fetch("http://157.180.88.215:4000/create-thumbnail", {
       method: "POST",
-      body: formData,
-      headers: formData.getHeaders(),
+      body: buffer, // reenviamos el buffer tal cual, incluyendo el FormData completo
+      headers: {
+        "content-type": req.headers["content-type"], // preserva multipart/form-data boundary
+      },
     });
 
     const backendData = await backendRes.json();
 
     return res.status(200).json({
-      message: "Formulario y archivo enviados correctamente ✅",
+      message: "Formulario y archivos enviados correctamente ✅",
       backendResponse: backendData,
     });
   } catch (error) {
