@@ -1,9 +1,9 @@
 // pages/api/create-thumbnail.js
-import formidable from "formidable";
 import Busboy from "busboy";
 import fs from "fs";
 import path from "path";
 import fetch from "node-fetch";
+import { FormData } from "formdata-node";
 
 // ⛔ Desactivar bodyParser de Next.js
 export const config = {
@@ -16,37 +16,16 @@ export default async function handler(req, res) {
   }
 
   try {
-    // ----------------------------
-    // 1️⃣ Procesar campos de texto
-    // ----------------------------
-    const form = formidable({ multiples: false });
-
-    const textFields = await new Promise((resolve, reject) => {
-      const fieldsObj = {};
-
-      form.on("field", (name, value) => {
-        console.log("🔹 Campo de texto recibido:", name, value);
-        fieldsObj[name] = value;
-      });
-
-      form.on("error", (err) => {
-        console.error("❌ Error en Formidable:", err);
-        reject(err);
-      });
-
-      form.parse(req, (err, fields) => {
-        if (err) reject(err);
-        else resolve(fieldsObj);
-      });
-    });
-
-    // ----------------------------
-    // 2️⃣ Procesar archivos (imágenes/video)
-    // ----------------------------
     const busboy = new Busboy({ headers: req.headers });
+    const textFields = {};
     const uploadedFiles = [];
 
-    const filesPromise = new Promise((resolve, reject) => {
+    const parsePromise = new Promise((resolve, reject) => {
+      busboy.on("field", (fieldname, val) => {
+        console.log("📝 Campo recibido:", fieldname, val);
+        textFields[fieldname] = val;
+      });
+
       busboy.on("file", (fieldname, file, filename, encoding, mimetype) => {
         console.log(`📎 Archivo recibido: ${filename} (${mimetype})`);
 
@@ -59,37 +38,28 @@ export default async function handler(req, res) {
         });
       });
 
-      busboy.on("error", (err) => {
-        console.error("❌ Error en Busboy:", err);
-        reject(err);
-      });
-
-      busboy.on("finish", () => {
-        resolve(uploadedFiles);
-      });
+      busboy.on("finish", () => resolve());
+      busboy.on("error", (err) => reject(err));
 
       req.pipe(busboy);
     });
 
-    const files = await filesPromise;
+    await parsePromise;
 
-    // ----------------------------
-    // 3️⃣ Preparar FormData para enviar al backend
-    // ----------------------------
-    const { FormData } = require("formdata-node");
+    // 📦 Preparar datos para reenviar al backend
     const formData = new FormData();
 
-    // Agregar campos de texto
+    // Añadir campos de texto
     for (const key in textFields) {
       formData.append(key, textFields[key]);
     }
 
-    // Agregar archivos
-    files.forEach((file) => {
+    // Añadir archivos
+    uploadedFiles.forEach((file) => {
       formData.append(file.fieldname, fs.createReadStream(file.path), file.filename);
     });
 
-    // Enviar al backend
+    // 🚀 Reenviar al backend
     const backendRes = await fetch("http://157.180.88.215:4000/create-thumbnail", {
       method: "POST",
       body: formData,
@@ -98,15 +68,15 @@ export default async function handler(req, res) {
 
     const backendData = await backendRes.json();
 
-    // Limpiar archivos temporales
-    files.forEach((file) => fs.unlinkSync(file.path));
+    // 🧹 Limpiar archivos temporales
+    uploadedFiles.forEach((file) => fs.unlinkSync(file.path));
 
     return res.status(200).json({
       message: "Formulario y archivos enviados correctamente ✅",
       backendResponse: backendData,
     });
   } catch (error) {
-    console.error("❌ Error procesando formulario y archivos:", error);
+    console.error("❌ Error procesando formulario:", error);
     return res.status(500).json({ error: "Error en el servidor" });
   }
 }
