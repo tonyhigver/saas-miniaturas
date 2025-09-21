@@ -43,6 +43,8 @@ export default function CreateForm() {
     clickbait: false,
   });
 
+  const [categorySearch, setCategorySearch] = useState("");
+
   const handleChange = (e) => {
     const { name, value, type, checked, files } = e.target;
 
@@ -88,14 +90,105 @@ export default function CreateForm() {
     );
   }
 
+  // 🎯 Opciones
   const colorOptions = [
-    "#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF", "#00FFFF",
-    "#000000", "#FFFFFF", "#FFA500", "#800080", "#008080", "#FFC0CB",
-    "#808000", "#A52A2A", "#ADD8E6", "#F0E68C", "#D2691E", "#B22222"
+    "#FF0000","#00FF00","#0000FF","#FFFF00","#FF00FF","#00FFFF",
+    "#000000","#FFFFFF","#FFA500","#800080","#008080","#FFC0CB",
+    "#808000","#A52A2A","#ADD8E6","#F0E68C","#D2691E","#B22222"
   ];
 
   const formatOptions = ["YouTube", "Instagram", "Facebook", "TikTok"];
   const clickbaitOptions = ["25%", "50%", "75%", "100%"];
+
+  // 📂 Categorías
+  const categories = [
+    {
+      group: "Gaming",
+      options: [
+        "Gameplay", "Speedrun", "Retos / Challenges", "Tutoriales / Guías",
+        "Esports / Torneos", "Let's Play", "Mods / Hacks / Experimentos", "Reacciones"
+      ]
+    },
+    {
+      group: "Vlogs / Lifestyle",
+      options: [
+        "Diario personal", "Viajes / Turismo", "Rutinas / Morning / Night routines",
+        "Unboxing / Compras", "Fitness / Deportes", "Estilo de vida / Motivación"
+      ]
+    },
+    {
+      group: "Entretenimiento",
+      options: [
+        "Comedia / Sketches","Parodias / Imitaciones","Fails / Bromas / Pranks",
+        "Reacciones / Reviews de películas o series","Animaciones / Motion graphics cortos",
+        "Clips virales / Memes"
+      ]
+    },
+    {
+      group: "Educación / Tutoriales",
+      options: [
+        "Tutoriales paso a paso","Explicaciones científicas","Clases / Cursos online",
+        "Lenguajes / Programación","Historia / Cultura"
+      ]
+    },
+    {
+      group: "Música / Arte",
+      options: [
+        "Covers / Interpretaciones musicales","Producción / Beat making / Remix",
+        "Arte visual / Diseño","Performance / Danza","Tutoriales de instrumentos"
+      ]
+    },
+    {
+      group: "Noticias / Actualidad",
+      options: [
+        "Noticias rápidas / Breaking news","Debates / Opinión",
+        "Eventos deportivos / cobertura en vivo","Resúmenes semanales"
+      ]
+    },
+    {
+      group: "DIY / Manualidades",
+      options: [
+        "Artesanía / Crafts","Reciclaje creativo / Upcycling",
+        "Decoración / Hogar","Proyectos escolares / Experimentos simples"
+      ]
+    },
+    {
+      group: "Tecnología / Reviews",
+      options: [
+        "Unboxing / Hands-on","Comparaciones de productos","Tutoriales de software",
+        "Trucos / Hacks / Tips","Gaming tech / Hardware / Gadgets"
+      ]
+    },
+    {
+      group: "Cocina / Comida",
+      options: [
+        "Recetas rápidas","Food challenges","Street food / Travel food",
+        "Técnicas culinarias","Reseñas de restaurantes"
+      ]
+    },
+    {
+      group: "Lifestyle y motivación",
+      options: [
+        "Self-help / Motivación / Productividad","Minimalismo / Organización",
+        "Fashion / Moda / Outfit del día","Beauty / Maquillaje / Haircare"
+      ]
+    },
+    {
+      group: "Extras (Miniaturas)",
+      options: [
+        "Texto grande y llamativo","Emojis / stickers",
+        "Caras con expresiones exageradas","Flechas, círculos, zoom",
+        "Fondos brillantes / explosivos"
+      ]
+    }
+  ];
+
+  const filteredCategories = categories.map(group => ({
+    ...group,
+    options: group.options.filter(opt =>
+      opt.toLowerCase().includes(categorySearch.toLowerCase())
+    )
+  }));
 
   return (
     <div className="min-h-screen bg-black text-white p-8">
@@ -128,6 +221,7 @@ export default function CreateForm() {
         <div className="border p-4 rounded-lg">
           <h2 className="text-xl font-semibold mb-2">1️⃣ Extraer información</h2>
 
+          {/* Descripción */}
           <label className="flex gap-2 items-center">
             <input
               type="checkbox"
@@ -148,6 +242,7 @@ export default function CreateForm() {
             />
           )}
 
+          {/* Categoría con buscador */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -158,20 +253,35 @@ export default function CreateForm() {
             Categoría
           </label>
           {enabledFields.category && (
-            <select
-              name="category"
-              value={formData.category}
-              onChange={handleChange}
-              className="p-2 rounded bg-gray-800"
-            >
-              <option value="">Selecciona</option>
-              <option value="Gaming">Gaming</option>
-              <option value="Tutorial">Tutorial</option>
-              <option value="Vlog">Vlog</option>
-              <option value="Educación">Educación</option>
-            </select>
+            <div className="mt-2">
+              <input
+                type="text"
+                placeholder="Buscar categoría..."
+                value={categorySearch}
+                onChange={(e) => setCategorySearch(e.target.value)}
+                className="p-2 w-full rounded bg-gray-700 mb-2"
+              />
+              <select
+                name="category"
+                value={formData.category}
+                onChange={handleChange}
+                className="p-2 w-full rounded bg-gray-800"
+              >
+                <option value="">Selecciona categoría</option>
+                {filteredCategories.map(group =>
+                  group.options.length > 0 && (
+                    <optgroup key={group.group} label={group.group}>
+                      {group.options.map(opt => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
+                    </optgroup>
+                  )
+                )}
+              </select>
+            </div>
           )}
 
+          {/* Video plot */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -196,7 +306,7 @@ export default function CreateForm() {
         <div className="border p-4 rounded-lg">
           <h2 className="text-xl font-semibold mb-2">2️⃣ Partes visuales</h2>
 
-          {/* Texto de la miniatura */}
+          {/* Texto */}
           <label className="flex gap-2 items-center">
             <input
               type="checkbox"
@@ -217,7 +327,7 @@ export default function CreateForm() {
             />
           )}
 
-          {/* Color primario */}
+          {/* Colores */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -259,13 +369,13 @@ export default function CreateForm() {
               className="p-2 rounded bg-gray-800"
             >
               <option value="">Selecciona formato</option>
-              {["YouTube","Instagram","Facebook","TikTok"].map(f => (
+              {formatOptions.map(f => (
                 <option key={f} value={f}>{f}</option>
               ))}
             </select>
           )}
 
-          {/* Nivel de clickbait */}
+          {/* Clickbait */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -283,13 +393,13 @@ export default function CreateForm() {
               className="p-2 rounded bg-gray-800"
             >
               <option value="">Selecciona nivel</option>
-              {["25%","50%","75%","100%"].map(c => (
+              {clickbaitOptions.map(c => (
                 <option key={c} value={c}>{c}</option>
               ))}
             </select>
           )}
 
-          {/* Subir foto de la cara */}
+          {/* Imagen cara */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -309,7 +419,7 @@ export default function CreateForm() {
             />
           )}
 
-          {/* Elementos visuales - subir imagen */}
+          {/* Elementos visuales */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -334,7 +444,7 @@ export default function CreateForm() {
         <div className="border p-4 rounded-lg">
           <h2 className="text-xl font-semibold mb-2">3️⃣ Puntos adicionales</h2>
 
-          {/* Número de caras */}
+          {/* Num caras */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
@@ -400,7 +510,7 @@ export default function CreateForm() {
             </div>
           )}
 
-          {/* Número de miniaturas */}
+          {/* Num resultados */}
           <label className="flex gap-2 items-center mt-3">
             <input
               type="checkbox"
