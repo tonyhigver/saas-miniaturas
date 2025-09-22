@@ -26,9 +26,9 @@ export default async function handler(req, res) {
 
     // --- 2) Reenviar buffer al backend sin procesar ---
     console.log("⏳ Reenviando datos al backend en Hetzner...");
-    const backendRes = await fetch("http://157.180.88.215:4000/create-thumbnail", {
+    const backendRes = await fetch("http://157.180.88.215:4000/api/generate", {
       method: "POST",
-      body: buffer, // reenviamos todo el FormData
+      body: buffer, // reenviamos todo el FormData (archivos + texto)
       headers: {
         "content-type": req.headers["content-type"], // preserva multipart/form-data con boundary
       },
