@@ -2,51 +2,50 @@
 import FormData from "form-data";
 import fetch from "node-fetch";
 
-// ⛔ Desactivar bodyParser de Next.js
+// ⛔ Desactivar bodyParser de Next.js para recibir FormData
 export const config = {
   api: { bodyParser: false },
 };
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
+    console.log("⚠️ Método no permitido:", req.method);
     return res.status(405).json({ error: "Método no permitido" });
   }
 
   try {
+    console.log("📩 Recibiendo petición /api/create-thumbnail desde frontend...");
+
     // --- 1) Leer request completo como buffer ---
     const chunks = [];
     for await (const chunk of req) {
       chunks.push(chunk);
     }
     const buffer = Buffer.concat(chunks);
+    console.log(`📦 Buffer recibido (${buffer.length} bytes)`);
 
-    // --- 2) Crear FormData ---
-    const formData = new FormData();
-
-    // ⚡ Importante: aquí asumimos que el frontend manda todo como FormData
-    // con "file" para archivos y otros campos de texto como "description", "titleText", etc.
-
-    // Extraemos los campos de texto desde el buffer usando "form-data-parser" simple
-    // o los definimos en frontend; aquí asumimos que el frontend ya envía FormData correcto.
-    // Si quieres, el backend puede simplemente reenviar todo como "file" + texto.
-
-    // --- 3) Reenviar al backend ---
+    // --- 2) Reenviar buffer al backend sin procesar ---
+    console.log("⏳ Reenviando datos al backend en Hetzner...");
     const backendRes = await fetch("http://157.180.88.215:4000/create-thumbnail", {
       method: "POST",
-      body: buffer, // reenviamos el buffer tal cual, incluyendo el FormData completo
+      body: buffer, // reenviamos todo el FormData
       headers: {
-        "content-type": req.headers["content-type"], // preserva multipart/form-data boundary
+        "content-type": req.headers["content-type"], // preserva multipart/form-data con boundary
       },
     });
 
+    // --- 3) Leer respuesta del backend ---
     const backendData = await backendRes.json();
+    console.log("✅ Respuesta del backend recibida:", backendData);
 
-    return res.status(200).json({
+    // --- 4) Responder al frontend ---
+    res.status(200).json({
       message: "Formulario y archivos enviados correctamente ✅",
       backendResponse: backendData,
     });
+    console.log("📤 Respuesta enviada al frontend ✅");
   } catch (error) {
-    console.error("❌ Error procesando el formulario:", error);
+    console.error("❌ Error procesando /api/create-thumbnail:", error);
     return res.status(500).json({ error: "Error en el servidor" });
   }
 }
