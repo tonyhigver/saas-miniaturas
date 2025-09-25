@@ -1,14 +1,18 @@
 // pages/api/ctr-dinamico/status.js
 
+import { getSession } from "next-auth/react"
+
 export default async function handler(req, res) {
   try {
-    // Simulación de estado, luego conecta con tu backend real
+    // 🔹 Obtener sesión del usuario
+    const session = await getSession({ req })
+    if (!session) return res.status(401).json({ error: "No autenticado" })
+
+    // 🔹 Estado real de CTR Dinámico
+    // Aquí puedes conectar con tu backend o DB para obtener isActivated
     const data = {
-      isActivated: false, // o true si ya está activado
-      videos: [
-        { id: "1", title: "Video de prueba 1", ctr: 45 },
-        { id: "2", title: "Video de prueba 2", ctr: 60 },
-      ],
+      isActivated: false, // Cambia a true si el usuario ya activó CTR Dinámico
+      videos: [], // ✅ Array vacío, los videos se obtendrán desde /videos
     }
 
     res.status(200).json(data)
