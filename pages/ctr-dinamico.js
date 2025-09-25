@@ -7,19 +7,19 @@ function VideoStats({ video }) {
   const views = video.viewsLastWeek || 0
 
   return (
-    <div className="p-4 border rounded-lg bg-gray-800 mt-4">
+    <div className="p-4 border rounded-lg bg-gray-200 text-black mt-4">
       <h3 className="font-semibold mb-2">{video.title}</h3>
       <p>Visualizaciones últimas 7 días: {views}</p>
 
       <div className="mt-4 space-x-2">
         <button
-          className="bg-blue-600 px-4 py-2 rounded text-white hover:bg-blue-700"
+          className="bg-blue-300 px-4 py-2 rounded text-black hover:bg-blue-400"
           onClick={() => alert("Aquí llamarías a tu backend para cambiar miniatura")}
         >
           Cambiar miniatura
         </button>
         <button
-          className="bg-green-600 px-4 py-2 rounded text-white hover:bg-green-700"
+          className="bg-green-300 px-4 py-2 rounded text-black hover:bg-green-400"
           onClick={() => alert("Aquí llamarías a tu backend para cambiar título")}
         >
           Cambiar título
@@ -45,13 +45,13 @@ function VideoSelector({ accessToken }) {
   }, [period])
 
   return (
-    <div className="mt-6 p-4 border rounded-xl shadow bg-gray-900">
+    <div className="mt-6 p-4 border rounded-xl shadow bg-gray-100 text-black">
       <h2 className="text-lg font-bold mb-2">Tus videos recientes</h2>
 
       <label className="block mb-2">
         Mostrar videos de:
         <select
-          className="ml-2 p-1 rounded"
+          className="ml-2 p-1 rounded text-black"
           value={period}
           onChange={(e) => setPeriod(e.target.value)}
         >
@@ -61,7 +61,7 @@ function VideoSelector({ accessToken }) {
       </label>
 
       <select
-        className="w-full p-2 border rounded mb-4"
+        className="w-full p-2 border rounded mb-4 text-black"
         value={selectedVideo?.id || ""}
         onChange={(e) =>
           setSelectedVideo(videos.find((v) => v.id === e.target.value))
@@ -86,6 +86,7 @@ export default function CtrDinamico() {
   const [intervalHours, setIntervalHours] = useState(24)
   const [intervalMinutes, setIntervalMinutes] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [showMainMenu, setShowMainMenu] = useState(true) // controla interfaz principal vs configuración
 
   // 🔹 Traer estado inicial desde backend
   useEffect(() => {
@@ -94,6 +95,7 @@ export default function CtrDinamico() {
         const res = await fetch("/api/ctr-dinamico/status")
         const data = await res.json()
         setIsActivated(data.isActivated)
+        if (data.isActivated) setShowMainMenu(false) // si ya activó, ir directo a configuración
       } catch (err) {
         console.error(err)
       } finally {
@@ -114,6 +116,7 @@ export default function CtrDinamico() {
       const res = await fetch("/api/ctr-dinamico/activate", { method: "POST" })
       if (!res.ok) throw new Error("No se pudo activar CTR Dinámico")
       setIsActivated(true)
+      setShowMainMenu(false) // mostrar configuración tras activación
     } catch (err) {
       console.error("Error activando CTR Dinámico:", err)
       alert("Ocurrió un error al activar CTR Dinámico")
@@ -131,41 +134,49 @@ export default function CtrDinamico() {
     alert("Configuración guardada ✅")
   }
 
-  if (loading) return <p className="p-4">Cargando...</p>
+  if (loading) return <p className="p-4 text-black">Cargando...</p>
 
   return (
-    <div className="p-8 max-w-3xl mx-auto">
+    <div className="p-8 max-w-3xl mx-auto text-black">
       <h1 className="text-2xl font-bold mb-4">CTR Dinámico</h1>
 
       {session?.error && (
-        <div className="mb-4 p-4 border-l-4 border-red-500 bg-red-100 text-red-700 rounded flex justify-between items-center">
+        <div className="mb-4 p-4 border-l-4 border-red-500 bg-red-200 text-black rounded flex justify-between items-center">
           <span>
             ⚠️ Error con el token de Google. Por favor, vuelve a iniciar sesión.
           </span>
           <button
             onClick={() => signIn("google")}
-            className="ml-4 bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
+            className="ml-4 bg-blue-300 text-black px-3 py-1 rounded hover:bg-blue-400"
           >
             Reintentar
           </button>
         </div>
       )}
 
-      {!isActivated ? (
-        <div className="border rounded-xl p-6 shadow">
+      {showMainMenu ? (
+        <div className="border rounded-xl p-6 shadow bg-gray-200 text-black">
           <p className="mb-4">
             Aún no has activado el sistema de CTR Dinámico para tus videos.
           </p>
           <button
             onClick={handleActivate}
-            className="bg-blue-600 text-white px-4 py-2 rounded-xl shadow hover:bg-blue-700"
+            className="bg-blue-300 text-black px-4 py-2 rounded-xl shadow hover:bg-blue-400"
           >
             Empezar 🚀
           </button>
         </div>
       ) : (
         <>
-          <div className="border rounded-xl p-6 shadow">
+          {/* Flecha para volver al menú principal */}
+          <button
+            onClick={() => setShowMainMenu(true)}
+            className="mb-4 text-black font-bold bg-gray-300 px-2 py-1 rounded hover:bg-gray-400"
+          >
+            ← Volver
+          </button>
+
+          <div className="border rounded-xl p-6 shadow bg-gray-200 text-black">
             <h2 className="text-lg font-semibold mb-2">Configuración</h2>
             <label className="block mb-2">
               Intervalo de revisión:
@@ -174,27 +185,27 @@ export default function CtrDinamico() {
                   type="number"
                   value={intervalHours}
                   onChange={(e) => setIntervalHours(Number(e.target.value))}
-                  className="w-20 border rounded p-1"
+                  className="w-20 border rounded p-1 text-black"
                 />
                 <span>horas</span>
                 <input
                   type="number"
                   value={intervalMinutes}
                   onChange={(e) => setIntervalMinutes(Number(e.target.value))}
-                  className="w-20 border rounded p-1"
+                  className="w-20 border rounded p-1 text-black"
                 />
                 <span>minutos</span>
               </div>
             </label>
             <button
               onClick={handleSaveSettings}
-              className="mt-3 bg-green-600 text-white px-4 py-2 rounded-xl shadow hover:bg-green-700"
+              className="mt-3 bg-green-300 text-black px-4 py-2 rounded-xl shadow hover:bg-green-400"
             >
               Guardar cambios
             </button>
           </div>
 
-          {/* 🔹 Selector de videos y estadísticas */}
+          {/* Selector de videos y estadísticas */}
           {isActivated && <VideoSelector accessToken={session.accessToken} />}
         </>
       )}
