@@ -191,7 +191,7 @@ export default function CtrDinamico() {
             </button>
           </div>
 
-          {/* Lista de videos y selección avanzada */}
+          {/* 🔹 Selector de videos y estadísticas */}
           {isActivated && <VideoSelector accessToken={session.accessToken} />}
         </>
       )}
