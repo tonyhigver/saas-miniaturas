@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react"
 import { useSession, signIn } from "next-auth/react"
 
-// 🔹 Componentes adicionales
+// 🔹 Componente para mostrar estadísticas de un video
 function VideoStats({ video }) {
   const views = video.viewsLastWeek || 0
 
@@ -29,6 +29,7 @@ function VideoStats({ video }) {
   )
 }
 
+// 🔹 Componente para seleccionar videos recientes
 function VideoSelector({ accessToken }) {
   const [videos, setVideos] = useState([])
   const [selectedVideo, setSelectedVideo] = useState(null)
@@ -84,17 +85,15 @@ export default function CtrDinamico() {
   const [isActivated, setIsActivated] = useState(false)
   const [intervalHours, setIntervalHours] = useState(24)
   const [intervalMinutes, setIntervalMinutes] = useState(0)
-  const [videos, setVideos] = useState([])
   const [loading, setLoading] = useState(true)
 
-  // 🔹 Traer estado inicial del backend
+  // 🔹 Traer estado inicial desde backend
   useEffect(() => {
     async function fetchData() {
       try {
         const res = await fetch("/api/ctr-dinamico/status")
         const data = await res.json()
         setIsActivated(data.isActivated)
-        setVideos(data.videos || [])
       } catch (err) {
         console.error(err)
       } finally {
@@ -104,15 +103,21 @@ export default function CtrDinamico() {
     if (session) fetchData()
   }, [session])
 
-  // 🔹 Activar por primera vez
+  // 🔹 Activar CTR Dinámico (sin dependencia de localhost)
   async function handleActivate() {
     if (!session) {
       signIn("google")
       return
     }
 
-    const res = await fetch("/api/ctr-dinamico/activate", { method: "POST" })
-    if (res.ok) setIsActivated(true)
+    try {
+      const res = await fetch("/api/ctr-dinamico/activate", { method: "POST" })
+      if (!res.ok) throw new Error("No se pudo activar CTR Dinámico")
+      setIsActivated(true)
+    } catch (err) {
+      console.error("Error activando CTR Dinámico:", err)
+      alert("Ocurrió un error al activar CTR Dinámico")
+    }
   }
 
   // 🔹 Guardar cambios de intervalo
@@ -132,7 +137,6 @@ export default function CtrDinamico() {
     <div className="p-8 max-w-3xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">CTR Dinámico</h1>
 
-      {/* 🔹 Aviso de error de token */}
       {session?.error && (
         <div className="mb-4 p-4 border-l-4 border-red-500 bg-red-100 text-red-700 rounded flex justify-between items-center">
           <span>
@@ -161,7 +165,6 @@ export default function CtrDinamico() {
         </div>
       ) : (
         <>
-          {/* Configuración de intervalos */}
           <div className="border rounded-xl p-6 shadow">
             <h2 className="text-lg font-semibold mb-2">Configuración</h2>
             <label className="block mb-2">
