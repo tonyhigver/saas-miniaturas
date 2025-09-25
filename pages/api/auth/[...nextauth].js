@@ -40,6 +40,8 @@ export const authOptions = {
         params: {
           scope:
             "openid email profile https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/youtube.force-ssl",
+          access_type: "offline", // necesario para refresh token
+          prompt: "consent", // fuerza a Google a dar refresh token
         },
       },
     }),

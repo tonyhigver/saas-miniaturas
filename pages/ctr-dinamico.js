@@ -24,9 +24,7 @@ export default function CtrDinamico() {
         setLoading(false)
       }
     }
-    if (session) {
-      fetchData()
-    }
+    if (session) fetchData()
   }, [session])
 
   // 🔹 Handler: activar por primera vez (tras consentimiento Google)
@@ -41,17 +39,12 @@ export default function CtrDinamico() {
     const res = await fetch("/api/ctr-dinamico/activate", {
       method: "POST",
     })
-    if (res.ok) {
-      setIsActivated(true)
-    }
+    if (res.ok) setIsActivated(true)
   }
 
   // 🔹 Handler: guardar cambios de intervalo
   async function handleSaveSettings() {
-    const body = {
-      intervalHours,
-      intervalMinutes,
-    }
+    const body = { intervalHours, intervalMinutes }
     await fetch("/api/ctr-dinamico/settings", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -69,7 +62,9 @@ export default function CtrDinamico() {
       {/* 🔹 Aviso de error con token */}
       {session?.error && (
         <div className="mb-4 p-4 border-l-4 border-red-500 bg-red-100 text-red-700 rounded flex justify-between items-center">
-          <span>⚠️ Error con el token de Google. Por favor, vuelve a iniciar sesión.</span>
+          <span>
+            ⚠️ Error con el token de Google. Por favor, vuelve a iniciar sesión.
+          </span>
           <button
             onClick={() => signIn("google")}
             className="ml-4 bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
