@@ -66,6 +66,19 @@ export default function CtrDinamico() {
     <div className="p-8 max-w-3xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">CTR Dinámico</h1>
 
+      {/* 🔹 Aviso de error con token */}
+      {session?.error && (
+        <div className="mb-4 p-4 border-l-4 border-red-500 bg-red-100 text-red-700 rounded flex justify-between items-center">
+          <span>⚠️ Error con el token de Google. Por favor, vuelve a iniciar sesión.</span>
+          <button
+            onClick={() => signIn("google")}
+            className="ml-4 bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
+          >
+            Reintentar
+          </button>
+        </div>
+      )}
+
       {!isActivated ? (
         <div className="border rounded-xl p-6 shadow">
           <p className="mb-4">
