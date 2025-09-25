@@ -1,14 +1,48 @@
 // pages/ctr-dinamico.js
 import { useEffect, useState } from "react"
 import { useSession, signIn } from "next-auth/react"
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts"
 
-function VideoStats({ video }) {
-  const views = video.viewsLastWeek || 0
+// 🔹 Componente para mostrar estadísticas y gráfico interactivo
+function VideoStats({ video, period }) {
+  const views = period === "week" ? video.viewsLastWeek : video.viewsLastMonth
+
+  const chartData = (video.viewsByDay || []).map((v, i) => ({
+    day: `Día ${i + 1}`,
+    views: v,
+  }))
 
   return (
     <div className="p-4 border rounded-lg bg-gray-200 text-black mt-4">
       <h3 className="font-semibold mb-2">{video.title}</h3>
-      <p>Visualizaciones últimas 7 días: {views}</p>
+      <p>
+        Visualizaciones {period === "week" ? "última semana" : "último mes"}:{" "}
+        {views}
+      </p>
+
+      <div style={{ width: "100%", height: 250 }}>
+        <ResponsiveContainer>
+          <LineChart
+            data={chartData}
+            margin={{ top: 5, right: 20, bottom: 5, left: 0 }}
+          >
+            <CartesianGrid stroke="#ccc" strokeDasharray="3 3" />
+            <XAxis dataKey="day" />
+            <YAxis />
+            <Tooltip />
+            <Line type="monotone" dataKey="views" stroke="#8884d8" />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+
       <div className="mt-4 space-x-2">
         <button
           className="bg-blue-300 px-4 py-2 rounded text-black hover:bg-blue-400"
@@ -27,6 +61,7 @@ function VideoStats({ video }) {
   )
 }
 
+// 🔹 Componente para seleccionar videos
 function VideoSelector({ videos, selectedVideo, setSelectedVideo, period, setPeriod }) {
   return (
     <div className="mt-6 p-4 border rounded-xl shadow bg-gray-100 text-black">
@@ -59,7 +94,7 @@ function VideoSelector({ videos, selectedVideo, setSelectedVideo, period, setPer
         ))}
       </select>
 
-      {selectedVideo && <VideoStats video={selectedVideo} />}
+      {selectedVideo && <VideoStats video={selectedVideo} period={period} />}
     </div>
   )
 }
@@ -72,12 +107,11 @@ export default function CtrDinamico() {
   const [loading, setLoading] = useState(true)
   const [showMainMenu, setShowMainMenu] = useState(true)
 
-  // 🔹 Estado centralizado de videos
   const [videos, setVideos] = useState([])
   const [selectedVideo, setSelectedVideo] = useState(null)
   const [period, setPeriod] = useState("week")
 
-  // 🔹 Traer estado inicial y videos del backend
+  // 🔹 Traer estado inicial y videos
   useEffect(() => {
     if (!session) return
     async function fetchData() {
@@ -86,7 +120,7 @@ export default function CtrDinamico() {
         const data = await res.json()
         setIsActivated(data.isActivated)
         if (data.isActivated) setShowMainMenu(false)
-        if (data.videos && data.videos.length > 0) {
+        if (data.videos?.length > 0) {
           setVideos(data.videos)
           setSelectedVideo(data.videos[0])
         }
@@ -99,7 +133,7 @@ export default function CtrDinamico() {
     fetchData()
   }, [session])
 
-  // 🔹 Refetch de videos cuando cambia el periodo o vuelve visible la pestaña
+  // 🔹 Refetch videos cuando cambia el periodo o pestaña visible
   useEffect(() => {
     if (!isActivated) return
     async function fetchVideos() {
@@ -219,7 +253,7 @@ export default function CtrDinamico() {
             videos={videos}
             selectedVideo={selectedVideo}
             setSelectedVideo={setSelectedVideo}
-            period={period}
+            period={period} // PASAMOS period aquí
             setPeriod={setPeriod}
           />
         </>
