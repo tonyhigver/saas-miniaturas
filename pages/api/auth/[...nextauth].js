@@ -1,6 +1,13 @@
 // pages/api/auth/[...nextauth].js
 import NextAuth from "next-auth"
 import GoogleProvider from "next-auth/providers/google"
+import { createClient } from "@supabase/supabase-js"
+
+// Inicializamos cliente Supabase con la service role key (⚠️ solo usar en el backend)
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+)
 
 // 🔹 Función para refrescar access token cuando expire
 async function refreshAccessToken(token) {
@@ -26,7 +33,7 @@ async function refreshAccessToken(token) {
       refreshToken: refreshedTokens.refresh_token ?? token.refreshToken,
     }
   } catch (error) {
-    console.error("Error refrescando token", error)
+    console.error("❌ Error refrescando token", error)
     return { ...token, error: "RefreshAccessTokenError" }
   }
 }
@@ -53,23 +60,34 @@ export const authOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, account }) {
-      // Primer login → guardar tokens
-      if (account) {
+    async jwt({ token, account, profile }) {
+      // 🔹 Primer login → guardar en Supabase
+      if (account && profile) {
+        try {
+          await supabase.from("users").upsert({
+            id: profile.sub, // ID único de Google
+            email: profile.email,
+            youtube_refresh_token: account.refresh_token, // 👈 guardamos el refresh token
+          })
+          console.log(`✅ Usuario ${profile.email} guardado en Supabase`)
+        } catch (err) {
+          console.error("❌ Error guardando usuario en Supabase:", err)
+        }
+
         return {
           accessToken: account.access_token,
           accessTokenExpires: Date.now() + account.expires_in * 1000,
           refreshToken: account.refresh_token,
-          user: token.sub,
+          user: profile.sub,
         }
       }
 
-      // Token aún válido → usarlo
+      // 🔹 Token aún válido → lo usamos
       if (Date.now() < token.accessTokenExpires) {
         return token
       }
 
-      // Token expirado → refrescar
+      // 🔹 Token expirado → refrescar
       return await refreshAccessToken(token)
     },
 
