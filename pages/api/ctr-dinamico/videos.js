@@ -15,9 +15,9 @@ export default async function handler(req, res) {
   const endDateStr = today.toISOString().split("T")[0]
 
   try {
-    // 1️⃣ Obtener el canal del usuario
+    // 1️⃣ Obtener canal del usuario
     const channelRes = await fetch(
-      "https://www.googleapis.com/youtube/v3/channels?part=id&mine=true",
+      "https://www.googleapis.com/youtube/v3/channels?part=id,contentDetails&mine=true",
       { headers: { Authorization: `Bearer ${session.accessToken}` } }
     )
     const channelData = await channelRes.json()
@@ -25,56 +25,55 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: "No se encontró canal de YouTube" })
 
     const channelId = channelData.items[0].id
-
-    // 2️⃣ Obtener playlist de uploads
-    const uploadsRes = await fetch(
-      `https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=${channelId}`,
-      { headers: { Authorization: `Bearer ${session.accessToken}` } }
-    )
-    const uploadsData = await uploadsRes.json()
     const uploadsPlaylistId =
-      uploadsData.items[0].contentDetails.relatedPlaylists.uploads
+      channelData.items[0].contentDetails.relatedPlaylists.uploads
 
-    // 3️⃣ Obtener videos de la playlist
+    // 2️⃣ Obtener videos de la playlist
     const playlistRes = await fetch(
       `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${uploadsPlaylistId}&maxResults=50`,
       { headers: { Authorization: `Bearer ${session.accessToken}` } }
     )
     const playlistData = await playlistRes.json()
-    const videoIds = playlistData.items.map((v) => v.contentDetails.videoId)
+    if (!playlistData.items || !playlistData.items.length)
+      return res.status(404).json({ error: "No se encontraron videos en el canal" })
 
-    // 4️⃣ Obtener estadísticas y analytics de los videos
-    const videos = []
-    for (const videoId of videoIds) {
-      // 🔹 Analytics API para views por día
-      const analyticsRes = await fetch(
-        `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&startDate=${startDateStr}&endDate=${endDateStr}&metrics=views&dimensions=day&filters=video==${videoId}`,
-        { headers: { Authorization: `Bearer ${session.accessToken}` } }
-      )
-      const analyticsData = await analyticsRes.json()
+    const videoIds = playlistData.items.map((v) => v.contentDetails.videoId).join(",")
 
-      const viewsByDay =
-        analyticsData.rows?.map((row) => parseInt(row[1])) ||
-        Array.from({ length: period === "week" ? 7 : 30 }, () => 0)
+    // 3️⃣ Obtener estadísticas básicas de los videos (V3 Data API)
+    const statsRes = await fetch(
+      `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&id=${videoIds}`,
+      { headers: { Authorization: `Bearer ${session.accessToken}` } }
+    )
+    const statsData = await statsRes.json()
 
-      // 🔹 Estadísticas básicas del video
-      const videoStatsRes = await fetch(
-        `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&id=${videoId}`,
-        { headers: { Authorization: `Bearer ${session.accessToken}` } }
-      )
-      const videoStatsData = await videoStatsRes.json()
-      const v = videoStatsData.items[0]
+    // 4️⃣ Obtener Analytics de todos los videos en un solo fetch
+    const analyticsRes = await fetch(
+      `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&startDate=${startDateStr}&endDate=${endDateStr}&metrics=views&dimensions=day,video&filters=video==${videoIds}`,
+      { headers: { Authorization: `Bearer ${session.accessToken}` } }
+    )
+    const analyticsData = await analyticsRes.json()
 
-      videos.push({
-        id: v.id,
-        title: v.snippet.title,
-        viewsLastWeek:
-          period === "week" ? viewsByDay.reduce((a, b) => a + b, 0) : undefined,
-        viewsLastMonth:
-          period === "month" ? viewsByDay.reduce((a, b) => a + b, 0) : undefined,
-        viewsByDay,
-      })
-    }
+    // 5️⃣ Mapear los datos de Analytics por video
+    const analyticsMap = {}
+    analyticsData.rows?.forEach(([day, videoId, views]) => {
+      if (!analyticsMap[videoId]) analyticsMap[videoId] = []
+      analyticsMap[videoId].push(parseInt(views))
+    })
+
+    // 6️⃣ Combinar datos y devolver al frontend
+    const videos = statsData.items.map((v) => ({
+      id: v.id,
+      title: v.snippet.title,
+      viewsLastWeek:
+        period === "week"
+          ? (analyticsMap[v.id]?.reduce((a, b) => a + b, 0) || 0)
+          : undefined,
+      viewsLastMonth:
+        period === "month"
+          ? (analyticsMap[v.id]?.reduce((a, b) => a + b, 0) || 0)
+          : undefined,
+      viewsByDay: analyticsMap[v.id] || Array.from({ length: period === "week" ? 7 : 30 }, () => 0),
+    }))
 
     res.status(200).json(videos)
   } catch (err) {
