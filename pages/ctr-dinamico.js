@@ -1,36 +1,48 @@
-import { useEffect, useState } from "react";
+// pages/ctr-dinamico.js
+import { useEffect, useState } from "react"
+import { useSession, signIn } from "next-auth/react"
 
 export default function CtrDinamico() {
-  const [isActivated, setIsActivated] = useState(false);
-  const [intervalHours, setIntervalHours] = useState(24);
-  const [intervalMinutes, setIntervalMinutes] = useState(0);
-  const [videos, setVideos] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { data: session } = useSession()
+  const [isActivated, setIsActivated] = useState(false)
+  const [intervalHours, setIntervalHours] = useState(24)
+  const [intervalMinutes, setIntervalMinutes] = useState(0)
+  const [videos, setVideos] = useState([])
+  const [loading, setLoading] = useState(true)
 
   // 🔹 Simulación: al montar, traer estado desde backend
   useEffect(() => {
     async function fetchData() {
       try {
-        const res = await fetch("/api/ctr-dinamico/status");
-        const data = await res.json();
-        setIsActivated(data.isActivated);
-        setVideos(data.videos || []);
+        const res = await fetch("/api/ctr-dinamico/status")
+        const data = await res.json()
+        setIsActivated(data.isActivated)
+        setVideos(data.videos || [])
       } catch (err) {
-        console.error(err);
+        console.error(err)
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
     }
-    fetchData();
-  }, []);
+    if (session) {
+      fetchData()
+    }
+  }, [session])
 
-  // 🔹 Handler: activar por primera vez
+  // 🔹 Handler: activar por primera vez (tras consentimiento Google)
   async function handleActivate() {
+    if (!session) {
+      // Abre consentimiento de Google
+      signIn("google")
+      return
+    }
+
+    // Si ya está logueado, llamamos a backend para activar
     const res = await fetch("/api/ctr-dinamico/activate", {
       method: "POST",
-    });
+    })
     if (res.ok) {
-      setIsActivated(true);
+      setIsActivated(true)
     }
   }
 
@@ -39,16 +51,16 @@ export default function CtrDinamico() {
     const body = {
       intervalHours,
       intervalMinutes,
-    };
+    }
     await fetch("/api/ctr-dinamico/settings", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
-    });
-    alert("Configuración guardada ✅");
+    })
+    alert("Configuración guardada ✅")
   }
 
-  if (loading) return <p className="p-4">Cargando...</p>;
+  if (loading) return <p className="p-4">Cargando...</p>
 
   return (
     <div className="p-8 max-w-3xl mx-auto">
@@ -122,5 +134,5 @@ export default function CtrDinamico() {
         </div>
       )}
     </div>
-  );
+  )
 }
