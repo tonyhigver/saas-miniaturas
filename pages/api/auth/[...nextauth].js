@@ -38,18 +38,20 @@ export const authOptions = {
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
       authorization: {
         params: {
-          scope:
-            "openid email profile https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/youtube.force-ssl",
-          access_type: "offline", // necesario para refresh token
-          prompt: "consent", // fuerza a Google a dar refresh token
+          scope: `
+            openid email profile
+            https://www.googleapis.com/auth/youtube.readonly
+            https://www.googleapis.com/auth/youtube.force-ssl
+            https://www.googleapis.com/auth/yt-analytics.readonly
+          `,
+          access_type: "offline",
+          prompt: "consent",
         },
       },
     }),
   ],
   callbacks: {
-    // 🔹 JWT callback: manejar access token y refresh token
     async jwt({ token, account }) {
-      // Primer login → guardar tokens
       if (account) {
         return {
           accessToken: account.access_token,
@@ -59,16 +61,10 @@ export const authOptions = {
         }
       }
 
-      // Token aún válido → usar mismo
-      if (Date.now() < token.accessTokenExpires) {
-        return token
-      }
+      if (Date.now() < token.accessTokenExpires) return token
 
-      // Token expirado → refrescar
       return await refreshAccessToken(token)
     },
-
-    // 🔹 Session callback: exponer accessToken y posibles errores al frontend
     async session({ session, token }) {
       session.user.id = token.user
       session.accessToken = token.accessToken
