@@ -15,7 +15,7 @@ export default async function handler(req, res) {
   const endDateStr = today.toISOString().split("T")[0]
 
   try {
-    // 1️⃣ Obtener canal del usuario
+    // 1️⃣ Obtener el canal del usuario
     const channelRes = await fetch(
       "https://www.googleapis.com/youtube/v3/channels?part=id&mine=true",
       { headers: { Authorization: `Bearer ${session.accessToken}` } }
@@ -43,21 +43,21 @@ export default async function handler(req, res) {
     const playlistData = await playlistRes.json()
     const videoIds = playlistData.items.map((v) => v.contentDetails.videoId)
 
-    // 4️⃣ Obtener estadísticas de los videos desde Analytics API
+    // 4️⃣ Obtener estadísticas y analytics de los videos
     const videos = []
     for (const videoId of videoIds) {
+      // 🔹 Analytics API para views por día
       const analyticsRes = await fetch(
         `https://youtubeanalytics.googleapis.com/v2/reports?ids=channel==${channelId}&startDate=${startDateStr}&endDate=${endDateStr}&metrics=views&dimensions=day&filters=video==${videoId}`,
         { headers: { Authorization: `Bearer ${session.accessToken}` } }
       )
       const analyticsData = await analyticsRes.json()
 
-      // Mapear datos diarios
       const viewsByDay =
         analyticsData.rows?.map((row) => parseInt(row[1])) ||
         Array.from({ length: period === "week" ? 7 : 30 }, () => 0)
 
-      // Información básica del video
+      // 🔹 Estadísticas básicas del video
       const videoStatsRes = await fetch(
         `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&id=${videoId}`,
         { headers: { Authorization: `Bearer ${session.accessToken}` } }
@@ -68,8 +68,10 @@ export default async function handler(req, res) {
       videos.push({
         id: v.id,
         title: v.snippet.title,
-        viewsLastWeek: period === "week" ? viewsByDay.reduce((a, b) => a + b, 0) : undefined,
-        viewsLastMonth: period === "month" ? viewsByDay.reduce((a, b) => a + b, 0) : undefined,
+        viewsLastWeek:
+          period === "week" ? viewsByDay.reduce((a, b) => a + b, 0) : undefined,
+        viewsLastMonth:
+          period === "month" ? viewsByDay.reduce((a, b) => a + b, 0) : undefined,
         viewsByDay,
       })
     }
