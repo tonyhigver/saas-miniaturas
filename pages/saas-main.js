@@ -1,6 +1,7 @@
 // pages/saas-main.js
 import { useSession, signOut } from "next-auth/react"
 import Sidebar from "../components/Sidebar" // <- Importación relativa
+import Link from "next/link" // 👈 Importamos Link para navegar a otras páginas
 
 export default function SaaSMain() {
   const { data: session } = useSession()
@@ -37,10 +38,20 @@ export default function SaaSMain() {
           </div>
         </header>
 
-        <main>
+        <main className="space-y-6">
           <p className="text-lg">
             Bienvenido, {session.user.name}! Aquí irá tu SaaS de miniaturas y optimización CTR.
           </p>
+
+          {/* Enlace al módulo CTR Dinámico */}
+          <div className="mt-6">
+            <Link
+              href="/ctr-dinamico"
+              className="inline-block bg-blue-500 px-6 py-3 rounded-lg text-white font-semibold hover:bg-blue-600 transition"
+            >
+              🚀 Ir a CTR Dinámico
+            </Link>
+          </div>
         </main>
       </div>
     </div>
