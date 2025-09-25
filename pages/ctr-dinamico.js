@@ -12,13 +12,13 @@ function VideoStats({ video }) {
       <div className="mt-4 space-x-2">
         <button
           className="bg-blue-300 px-4 py-2 rounded text-black hover:bg-blue-400"
-          onClick={() => alert("Aquí llamarías a tu backend para cambiar miniatura")}
+          onClick={() => alert("Cambiar miniatura")}
         >
           Cambiar miniatura
         </button>
         <button
           className="bg-green-300 px-4 py-2 rounded text-black hover:bg-green-400"
-          onClick={() => alert("Aquí llamarías a tu backend para cambiar título")}
+          onClick={() => alert("Cambiar título")}
         >
           Cambiar título
         </button>
@@ -27,7 +27,6 @@ function VideoStats({ video }) {
   )
 }
 
-// Ahora VideoSelector solo renderiza lo que recibe por props
 function VideoSelector({ videos, selectedVideo, setSelectedVideo, period, setPeriod }) {
   return (
     <div className="mt-6 p-4 border rounded-xl shadow bg-gray-100 text-black">
@@ -73,23 +72,23 @@ export default function CtrDinamico() {
   const [loading, setLoading] = useState(true)
   const [showMainMenu, setShowMainMenu] = useState(true)
 
-  // **Estado de videos centralizado**
+  // 🔹 Estado centralizado de videos
   const [videos, setVideos] = useState([])
   const [selectedVideo, setSelectedVideo] = useState(null)
   const [period, setPeriod] = useState("week")
 
-  // 🔹 Traer estado inicial desde backend
+  // 🔹 Traer estado inicial y videos del backend
   useEffect(() => {
+    if (!session) return
     async function fetchData() {
       try {
         const res = await fetch("/api/ctr-dinamico/status")
         const data = await res.json()
         setIsActivated(data.isActivated)
         if (data.isActivated) setShowMainMenu(false)
-
-        if (data.videos) {
+        if (data.videos && data.videos.length > 0) {
           setVideos(data.videos)
-          setSelectedVideo(data.videos[0] || null)
+          setSelectedVideo(data.videos[0])
         }
       } catch (err) {
         console.error(err)
@@ -97,13 +96,12 @@ export default function CtrDinamico() {
         setLoading(false)
       }
     }
-    if (session) fetchData()
+    fetchData()
   }, [session])
 
-  // 🔹 Cargar videos cuando cambia el periodo o vuelve visible la pestaña
+  // 🔹 Refetch de videos cuando cambia el periodo o vuelve visible la pestaña
   useEffect(() => {
     if (!isActivated) return
-
     async function fetchVideos() {
       try {
         const res = await fetch(`/api/ctr-dinamico/videos?period=${period}`)
@@ -114,23 +112,20 @@ export default function CtrDinamico() {
         console.error(err)
       }
     }
-
     fetchVideos()
 
-    const handleVisibilityChange = () => {
+    const handleVisibility = () => {
       if (document.visibilityState === "visible") fetchVideos()
     }
-    document.addEventListener("visibilitychange", handleVisibilityChange)
-    return () => document.removeEventListener("visibilitychange", handleVisibilityChange)
+    document.addEventListener("visibilitychange", handleVisibility)
+    return () => document.removeEventListener("visibilitychange", handleVisibility)
   }, [period, isActivated])
 
-  // 🔹 Activar CTR Dinámico
   async function handleActivate() {
     if (!session) {
       signIn("google")
       return
     }
-
     try {
       const res = await fetch("/api/ctr-dinamico/activate", { method: "POST" })
       if (!res.ok) throw new Error("No se pudo activar CTR Dinámico")
@@ -138,11 +133,10 @@ export default function CtrDinamico() {
       setShowMainMenu(false)
     } catch (err) {
       console.error(err)
-      alert("Ocurrió un error al activar CTR Dinámico")
+      alert("Error al activar CTR Dinámico")
     }
   }
 
-  // 🔹 Guardar cambios de intervalo
   async function handleSaveSettings() {
     const body = { intervalHours, intervalMinutes }
     await fetch("/api/ctr-dinamico/settings", {
@@ -161,9 +155,7 @@ export default function CtrDinamico() {
 
       {session?.error && (
         <div className="mb-4 p-4 border-l-4 border-red-500 bg-red-200 text-black rounded flex justify-between items-center">
-          <span>
-            ⚠️ Error con el token de Google. Por favor, vuelve a iniciar sesión.
-          </span>
+          <span>⚠️ Error con el token de Google. Vuelve a iniciar sesión.</span>
           <button
             onClick={() => signIn("google")}
             className="ml-4 bg-blue-300 text-black px-3 py-1 rounded hover:bg-blue-400"
@@ -187,7 +179,6 @@ export default function CtrDinamico() {
         </div>
       ) : (
         <>
-          {/* Flecha para volver al menú principal */}
           <button
             onClick={() => setShowMainMenu(true)}
             className="mb-4 text-black font-bold bg-gray-300 px-2 py-1 rounded hover:bg-gray-400"
@@ -224,15 +215,13 @@ export default function CtrDinamico() {
             </button>
           </div>
 
-          {isActivated && (
-            <VideoSelector
-              videos={videos}
-              selectedVideo={selectedVideo}
-              setSelectedVideo={setSelectedVideo}
-              period={period}
-              setPeriod={setPeriod}
-            />
-          )}
+          <VideoSelector
+            videos={videos}
+            selectedVideo={selectedVideo}
+            setSelectedVideo={setSelectedVideo}
+            period={period}
+            setPeriod={setPeriod}
+          />
         </>
       )}
     </div>
