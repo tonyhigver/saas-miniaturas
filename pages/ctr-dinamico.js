@@ -30,19 +30,36 @@ function VideoStats({ video }) {
 }
 
 // 🔹 Componente para seleccionar videos recientes
-function VideoSelector({ accessToken }) {
+function VideoSelector({ accessToken, isActivated }) {
   const [videos, setVideos] = useState([])
   const [selectedVideo, setSelectedVideo] = useState(null)
   const [period, setPeriod] = useState("week")
 
+  // Cargar videos cada vez que cambia el periodo o se activa CTR
   useEffect(() => {
+    if (!isActivated) return
+
     async function fetchVideos() {
-      const res = await fetch(`/api/ctr-dinamico/videos?period=${period}`)
-      const data = await res.json()
-      setVideos(data)
+      try {
+        const res = await fetch(`/api/ctr-dinamico/videos?period=${period}`)
+        const data = await res.json()
+        setVideos(data)
+        // Mantener selección previa si existe
+        if (!selectedVideo && data.length > 0) setSelectedVideo(data[0])
+      } catch (err) {
+        console.error("Error cargando videos:", err)
+      }
     }
+
     fetchVideos()
-  }, [period])
+
+    // Optional: refrescar si la pestaña vuelve a estar visible
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") fetchVideos()
+    }
+    document.addEventListener("visibilitychange", handleVisibilityChange)
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange)
+  }, [period, isActivated])
 
   return (
     <div className="mt-6 p-4 border rounded-xl shadow bg-gray-100 text-black">
@@ -86,7 +103,7 @@ export default function CtrDinamico() {
   const [intervalHours, setIntervalHours] = useState(24)
   const [intervalMinutes, setIntervalMinutes] = useState(0)
   const [loading, setLoading] = useState(true)
-  const [showMainMenu, setShowMainMenu] = useState(true) // controla interfaz principal vs configuración
+  const [showMainMenu, setShowMainMenu] = useState(true)
 
   // 🔹 Traer estado inicial desde backend
   useEffect(() => {
@@ -95,7 +112,7 @@ export default function CtrDinamico() {
         const res = await fetch("/api/ctr-dinamico/status")
         const data = await res.json()
         setIsActivated(data.isActivated)
-        if (data.isActivated) setShowMainMenu(false) // si ya activó, ir directo a configuración
+        if (data.isActivated) setShowMainMenu(false)
       } catch (err) {
         console.error(err)
       } finally {
@@ -105,7 +122,7 @@ export default function CtrDinamico() {
     if (session) fetchData()
   }, [session])
 
-  // 🔹 Activar CTR Dinámico (sin dependencia de localhost)
+  // 🔹 Activar CTR Dinámico
   async function handleActivate() {
     if (!session) {
       signIn("google")
@@ -116,7 +133,7 @@ export default function CtrDinamico() {
       const res = await fetch("/api/ctr-dinamico/activate", { method: "POST" })
       if (!res.ok) throw new Error("No se pudo activar CTR Dinámico")
       setIsActivated(true)
-      setShowMainMenu(false) // mostrar configuración tras activación
+      setShowMainMenu(false)
     } catch (err) {
       console.error("Error activando CTR Dinámico:", err)
       alert("Ocurrió un error al activar CTR Dinámico")
@@ -206,7 +223,9 @@ export default function CtrDinamico() {
           </div>
 
           {/* Selector de videos y estadísticas */}
-          {isActivated && <VideoSelector accessToken={session.accessToken} />}
+          {isActivated && (
+            <VideoSelector accessToken={session.accessToken} isActivated={isActivated} />
+          )}
         </>
       )}
     </div>
