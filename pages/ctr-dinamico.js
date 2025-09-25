@@ -14,7 +14,6 @@ import {
 // 🔹 Componente para mostrar estadísticas y gráfico interactivo
 function VideoStats({ video, period }) {
   const views = period === "week" ? video.viewsLastWeek : video.viewsLastMonth
-
   const chartData = (video.viewsByDay || []).map((v, i) => ({
     day: `Día ${i + 1}`,
     views: v,
@@ -24,8 +23,7 @@ function VideoStats({ video, period }) {
     <div className="p-4 border rounded-lg bg-gray-200 text-black mt-4">
       <h3 className="font-semibold mb-2">{video.title}</h3>
       <p>
-        Visualizaciones {period === "week" ? "última semana" : "último mes"}:{" "}
-        {views}
+        Visualizaciones {period === "week" ? "última semana" : "último mes"}: {views}
       </p>
 
       <div style={{ width: "100%", height: 250 }}>
@@ -114,45 +112,61 @@ export default function CtrDinamico() {
   // 🔹 Traer estado inicial y videos
   useEffect(() => {
     if (!session) return
+    let isMounted = true
+
     async function fetchData() {
       try {
         const res = await fetch("/api/ctr-dinamico/status")
         const data = await res.json()
+        if (!isMounted) return
+
         setIsActivated(data.isActivated)
         if (data.isActivated) setShowMainMenu(false)
+
         if (data.videos?.length > 0) {
           setVideos(data.videos)
-          setSelectedVideo(data.videos[0])
+          if (!selectedVideo) setSelectedVideo(data.videos[0])
         }
       } catch (err) {
         console.error(err)
       } finally {
-        setLoading(false)
+        if (isMounted) setLoading(false)
       }
     }
     fetchData()
+
+    return () => { isMounted = false }
   }, [session])
 
   // 🔹 Refetch videos cuando cambia el periodo o pestaña visible
   useEffect(() => {
     if (!isActivated) return
+    let isMounted = true
+
     async function fetchVideos() {
       try {
         const res = await fetch(`/api/ctr-dinamico/videos?period=${period}`)
         const data = await res.json()
+        if (!isMounted) return
+
         setVideos(data)
+        // ⚠️ Solo setear selectedVideo si no hay uno ya
         if (!selectedVideo && data.length > 0) setSelectedVideo(data[0])
       } catch (err) {
         console.error(err)
       }
     }
+
     fetchVideos()
 
     const handleVisibility = () => {
       if (document.visibilityState === "visible") fetchVideos()
     }
     document.addEventListener("visibilitychange", handleVisibility)
-    return () => document.removeEventListener("visibilitychange", handleVisibility)
+    return () => {
+      isMounted = false
+      document.removeEventListener("visibilitychange", handleVisibility)
+    }
   }, [period, isActivated])
 
   async function handleActivate() {
@@ -253,7 +267,7 @@ export default function CtrDinamico() {
             videos={videos}
             selectedVideo={selectedVideo}
             setSelectedVideo={setSelectedVideo}
-            period={period} // PASAMOS period aquí
+            period={period}
             setPeriod={setPeriod}
           />
         </>
