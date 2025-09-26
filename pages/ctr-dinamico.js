@@ -9,7 +9,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  ReferenceLine,
 } from "recharts"
 
 // 🔹 Componente para mostrar estadísticas y gráfico interactivo
@@ -17,40 +16,38 @@ function VideoStats({ video, period }) {
   const viewsTotal =
     period === "week" ? video.totalViewsWeek : video.totalViewsMonth
 
-  // Ordenar registros por timestamp
-  const sorted = [...(video.viewsByInterval || [])].sort(
-    (a, b) => new Date(a.timestamp) - new Date(b.timestamp)
-  )
+  // Transformar registros de Supabase en incrementos de 6h
+  const chartData = []
+  const records = video.viewsByDay || []
 
-  const groupedData = []
-  let lastBlockValue = 0
-  let lastBlockTime = null
+  let lastViews = 0
+  records.forEach((rec) => {
+    const date = new Date(rec.timestamp)
+    const intervalHour = Math.floor(date.getHours() / 6) * 6
+    const label = `${date.getDate()}/${date.getMonth() + 1} ${intervalHour}:00`
 
-  sorted.forEach((entry) => {
-    const date = new Date(entry.timestamp)
-    const blockStartHour = Math.floor(date.getHours() / 6) * 6
-    const blockStart = new Date(date)
-    blockStart.setHours(blockStartHour, 0, 0, 0)
-    const label = `${date.getDate()}/${date.getMonth() + 1} ${blockStartHour}:00`
+    const increment = rec.views - lastViews
+    lastViews = rec.views
 
-    // Si es un nuevo bloque
-    if (!lastBlockTime || blockStart > lastBlockTime) {
-      groupedData.push({
-        interval: label,
-        views: entry.views - lastBlockValue,
-        isTemp: false,
-      })
-      lastBlockValue = entry.views
-      lastBlockTime = blockStart
-    } else {
-      // Registro dentro de bloque incompleto → línea temporal
-      groupedData.push({
-        interval: `${date.getDate()}/${date.getMonth() + 1} ${date.getHours()}:${date.getMinutes()}`,
-        views: entry.views - lastBlockValue,
-        isTemp: true,
-      })
-    }
+    chartData.push({
+      interval: label,
+      views: increment > 0 ? increment : 0,
+    })
   })
+
+  // Para bloques de 6h incompletos, agregar línea temporal con último incremento
+  if (records.length > 0) {
+    const lastRec = records[records.length - 1]
+    const lastDate = new Date(lastRec.timestamp)
+    const lastIntervalHour = Math.floor(lastDate.getHours() / 6) * 6
+    const nextLabel = `${lastDate.getDate()}/${lastDate.getMonth() + 1} ${lastIntervalHour + 6}:00`
+
+    chartData.push({
+      interval: nextLabel,
+      views: lastRec.views - (records[records.length - 2]?.views || 0),
+      temporary: true, // marcar que es temporal
+    })
+  }
 
   return (
     <div className="p-4 border rounded-lg bg-gray-200 text-black mt-4">
@@ -59,12 +56,9 @@ function VideoStats({ video, period }) {
         Visualizaciones {period === "week" ? "última semana" : "último mes"}: {viewsTotal}
       </p>
 
-      <div style={{ width: "100%", height: 250 }}>
+      <div style={{ width: "100%", height: 300 }} className="mb-4">
         <ResponsiveContainer>
-          <LineChart
-            data={groupedData}
-            margin={{ top: 5, right: 20, bottom: 5, left: 0 }}
-          >
+          <LineChart data={chartData}>
             <CartesianGrid stroke="#ccc" strokeDasharray="3 3" />
             <XAxis dataKey="interval" />
             <YAxis />
@@ -73,22 +67,25 @@ function VideoStats({ video, period }) {
               type="monotone"
               dataKey="views"
               stroke="#8884d8"
-              dot={false}
-              isAnimationActive={false}
+              strokeDasharray="0"
             />
-            {/* Dibujar líneas verticales temporales */}
-            {groupedData
-              .filter((d) => d.isTemp)
-              .map((d, i) => (
-                <ReferenceLine
-                  key={i}
-                  x={d.interval}
-                  stroke="red"
-                  label={{ value: d.views, position: "top", fill: "red" }}
-                />
-              ))}
           </LineChart>
         </ResponsiveContainer>
+      </div>
+
+      <div className="mt-4 flex space-x-2">
+        <button
+          className="bg-blue-300 px-4 py-2 rounded text-black hover:bg-blue-400"
+          onClick={() => alert("Cambiar miniatura")}
+        >
+          Cambiar miniatura
+        </button>
+        <button
+          className="bg-green-300 px-4 py-2 rounded text-black hover:bg-green-400"
+          onClick={() => alert("Cambiar título")}
+        >
+          Cambiar título
+        </button>
       </div>
     </div>
   )
@@ -161,6 +158,7 @@ export default function CtrDinamico() {
 
     fetchVideos()
 
+    // Refetch cuando la pestaña vuelve a estar visible
     const handleVisibility = () => {
       if (document.visibilityState === "visible") fetchVideos()
     }
