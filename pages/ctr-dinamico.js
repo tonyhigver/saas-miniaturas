@@ -9,6 +9,7 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  ReferenceLine,
 } from "recharts"
 
 // 🔹 Componente para mostrar estadísticas y gráfico interactivo
@@ -16,30 +17,38 @@ function VideoStats({ video, period }) {
   const viewsTotal =
     period === "week" ? video.totalViewsWeek : video.totalViewsMonth
 
-  // Agrupar registros de Supabase en intervalos de 6h
-  const chartData = (video.viewsByInterval || []).map((entry, i, arr) => {
-    const prev = arr[i - 1]?.views || 0
-    const increment = entry.views - prev
-    const date = new Date(entry.timestamp)
+  // Ordenar registros por timestamp
+  const sorted = [...(video.viewsByInterval || [])].sort(
+    (a, b) => new Date(a.timestamp) - new Date(b.timestamp)
+  )
 
-    // Agrupar en intervalos de 6h
-    const hours = Math.floor(date.getHours() / 6) * 6
-    const label = `${date.getDate()}/${date.getMonth() + 1} ${hours}:00`
-
-    return {
-      interval: label,
-      views: increment > 0 ? increment : 0,
-    }
-  })
-
-  // Eliminar duplicados por intervalos (sumando valores)
   const groupedData = []
-  chartData.forEach((item) => {
-    const last = groupedData[groupedData.length - 1]
-    if (last && last.interval === item.interval) {
-      last.views += item.views
+  let lastBlockValue = 0
+  let lastBlockTime = null
+
+  sorted.forEach((entry) => {
+    const date = new Date(entry.timestamp)
+    const blockStartHour = Math.floor(date.getHours() / 6) * 6
+    const blockStart = new Date(date)
+    blockStart.setHours(blockStartHour, 0, 0, 0)
+    const label = `${date.getDate()}/${date.getMonth() + 1} ${blockStartHour}:00`
+
+    // Si es un nuevo bloque
+    if (!lastBlockTime || blockStart > lastBlockTime) {
+      groupedData.push({
+        interval: label,
+        views: entry.views - lastBlockValue,
+        isTemp: false,
+      })
+      lastBlockValue = entry.views
+      lastBlockTime = blockStart
     } else {
-      groupedData.push({ ...item })
+      // Registro dentro de bloque incompleto → línea temporal
+      groupedData.push({
+        interval: `${date.getDate()}/${date.getMonth() + 1} ${date.getHours()}:${date.getMinutes()}`,
+        views: entry.views - lastBlockValue,
+        isTemp: true,
+      })
     }
   })
 
@@ -60,24 +69,26 @@ function VideoStats({ video, period }) {
             <XAxis dataKey="interval" />
             <YAxis />
             <Tooltip />
-            <Line type="monotone" dataKey="views" stroke="#8884d8" />
+            <Line
+              type="monotone"
+              dataKey="views"
+              stroke="#8884d8"
+              dot={false}
+              isAnimationActive={false}
+            />
+            {/* Dibujar líneas verticales temporales */}
+            {groupedData
+              .filter((d) => d.isTemp)
+              .map((d, i) => (
+                <ReferenceLine
+                  key={i}
+                  x={d.interval}
+                  stroke="red"
+                  label={{ value: d.views, position: "top", fill: "red" }}
+                />
+              ))}
           </LineChart>
         </ResponsiveContainer>
-      </div>
-
-      <div className="mt-4 space-x-2">
-        <button
-          className="bg-blue-300 px-4 py-2 rounded text-black hover:bg-blue-400"
-          onClick={() => alert("Cambiar miniatura")}
-        >
-          Cambiar miniatura
-        </button>
-        <button
-          className="bg-green-300 px-4 py-2 rounded text-black hover:bg-green-400"
-          onClick={() => alert("Cambiar título")}
-        >
-          Cambiar título
-        </button>
       </div>
     </div>
   )
