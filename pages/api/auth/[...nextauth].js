@@ -3,13 +3,13 @@ import NextAuth from "next-auth"
 import GoogleProvider from "next-auth/providers/google"
 import { createClient } from "@supabase/supabase-js"
 
-// Inicializamos cliente Supabase con la service role key (⚠️ solo usar en el backend)
+// 🔹 Inicializa Supabase con Service Role Key (backend únicamente)
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 )
 
-// 🔹 Función para refrescar access token cuando expire
+// 🔹 Refresca access token si expira
 async function refreshAccessToken(token) {
   try {
     const url =
@@ -33,7 +33,7 @@ async function refreshAccessToken(token) {
       refreshToken: refreshedTokens.refresh_token ?? token.refreshToken,
     }
   } catch (error) {
-    console.error("❌ Error refrescando token", error)
+    console.error("❌ Error refrescando token:", error)
     return { ...token, error: "RefreshAccessTokenError" }
   }
 }
@@ -54,24 +54,26 @@ export const authOptions = {
             "https://www.googleapis.com/auth/yt-analytics.readonly",
           ].join(" "),
           access_type: "offline", // necesario para refresh token
-          prompt: "consent", // fuerza a Google a dar refresh token
+          prompt: "consent",      // fuerza a Google a dar refresh token
         },
       },
     }),
   ],
   callbacks: {
     async jwt({ token, account, profile }) {
-      // 🔹 Primer login → guardar en Supabase
+      // 🔹 Primer login → guardar usuario en Supabase
       if (account && profile) {
         try {
-          await supabase.from("users").upsert({
-            id: profile.sub, // ID único de Google
+          const { error } = await supabase.from("users").upsert({
+            id: profile.sub,                  // ID único de Google
             email: profile.email,
-            youtube_refresh_token: account.refresh_token, // 👈 guardamos el refresh token
-          })
-          console.log(`✅ Usuario ${profile.email} guardado en Supabase`)
+            youtube_refresh_token: account.refresh_token,
+          }, { onConflict: "id" })           // evita duplicados
+          
+          if (error) console.error("❌ Error guardando usuario:", error)
+          else console.log(`✅ Usuario ${profile.email} guardado en Supabase`)
         } catch (err) {
-          console.error("❌ Error guardando usuario en Supabase:", err)
+          console.error("❌ Excepción guardando usuario:", err)
         }
 
         return {
@@ -82,7 +84,7 @@ export const authOptions = {
         }
       }
 
-      // 🔹 Token aún válido → lo usamos
+      // 🔹 Token válido → usamos
       if (Date.now() < token.accessTokenExpires) {
         return token
       }
