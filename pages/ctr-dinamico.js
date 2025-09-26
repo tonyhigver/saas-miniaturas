@@ -13,19 +13,33 @@ import {
 
 // 🔹 Componente para mostrar estadísticas y gráfico interactivo
 function VideoStats({ video, period }) {
-  // Totales reales de Supabase
   const viewsTotal =
     period === "week" ? video.totalViewsWeek : video.totalViewsMonth
 
-  // Generar datos del gráfico con intervalos de 6h
+  // Agrupar registros de Supabase en intervalos de 6h
   const chartData = (video.viewsByInterval || []).map((entry, i, arr) => {
     const prev = arr[i - 1]?.views || 0
-    const increment = entry.views - prev // diferencia entre registros
+    const increment = entry.views - prev
     const date = new Date(entry.timestamp)
-    const label = `${date.getDate()}/${date.getMonth() + 1} ${date.getHours()}:00`
+
+    // Agrupar en intervalos de 6h
+    const hours = Math.floor(date.getHours() / 6) * 6
+    const label = `${date.getDate()}/${date.getMonth() + 1} ${hours}:00`
+
     return {
       interval: label,
       views: increment > 0 ? increment : 0,
+    }
+  })
+
+  // Eliminar duplicados por intervalos (sumando valores)
+  const groupedData = []
+  chartData.forEach((item) => {
+    const last = groupedData[groupedData.length - 1]
+    if (last && last.interval === item.interval) {
+      last.views += item.views
+    } else {
+      groupedData.push({ ...item })
     }
   })
 
@@ -39,7 +53,7 @@ function VideoStats({ video, period }) {
       <div style={{ width: "100%", height: 250 }}>
         <ResponsiveContainer>
           <LineChart
-            data={chartData}
+            data={groupedData}
             margin={{ top: 5, right: 20, bottom: 5, left: 0 }}
           >
             <CartesianGrid stroke="#ccc" strokeDasharray="3 3" />
@@ -136,7 +150,6 @@ export default function CtrDinamico() {
 
     fetchVideos()
 
-    // Refetch cuando la pestaña vuelve a estar visible
     const handleVisibility = () => {
       if (document.visibilityState === "visible") fetchVideos()
     }
