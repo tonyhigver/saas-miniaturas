@@ -13,17 +13,27 @@ import {
 
 // 🔹 Componente para mostrar estadísticas y gráfico interactivo
 function VideoStats({ video, period }) {
-  const views = period === "week" ? video.viewsLastWeek : video.viewsLastMonth
-  const chartData = (video.viewsByDay || []).map((v, i) => ({
-    day: `Día ${i + 1}`,
-    views: v,
-  }))
+  // Totales reales de Supabase
+  const viewsTotal =
+    period === "week" ? video.totalViewsWeek : video.totalViewsMonth
+
+  // Generar datos del gráfico con intervalos de 6h
+  const chartData = (video.viewsByInterval || []).map((entry, i, arr) => {
+    const prev = arr[i - 1]?.views || 0
+    const increment = entry.views - prev // diferencia entre registros
+    const date = new Date(entry.timestamp)
+    const label = `${date.getDate()}/${date.getMonth() + 1} ${date.getHours()}:00`
+    return {
+      interval: label,
+      views: increment > 0 ? increment : 0,
+    }
+  })
 
   return (
     <div className="p-4 border rounded-lg bg-gray-200 text-black mt-4">
       <h3 className="font-semibold mb-2">{video.title}</h3>
       <p>
-        Visualizaciones {period === "week" ? "última semana" : "último mes"}: {views}
+        Visualizaciones {period === "week" ? "última semana" : "último mes"}: {viewsTotal}
       </p>
 
       <div style={{ width: "100%", height: 250 }}>
@@ -33,7 +43,7 @@ function VideoStats({ video, period }) {
             margin={{ top: 5, right: 20, bottom: 5, left: 0 }}
           >
             <CartesianGrid stroke="#ccc" strokeDasharray="3 3" />
-            <XAxis dataKey="day" />
+            <XAxis dataKey="interval" />
             <YAxis />
             <Tooltip />
             <Line type="monotone" dataKey="views" stroke="#8884d8" />
@@ -137,17 +147,18 @@ export default function CtrDinamico() {
     }
   }, [session, period])
 
-  if (!session) return (
-    <div className="p-8 text-black">
-      <p>No estás autenticado.</p>
-      <button
-        className="bg-blue-300 px-4 py-2 rounded"
-        onClick={() => signIn("google")}
-      >
-        Iniciar sesión con Google
-      </button>
-    </div>
-  )
+  if (!session)
+    return (
+      <div className="p-8 text-black">
+        <p>No estás autenticado.</p>
+        <button
+          className="bg-blue-300 px-4 py-2 rounded"
+          onClick={() => signIn("google")}
+        >
+          Iniciar sesión con Google
+        </button>
+      </div>
+    )
 
   if (loading) return <p className="p-4 text-black">Cargando...</p>
 
