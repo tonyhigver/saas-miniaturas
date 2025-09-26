@@ -9,12 +9,12 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  ReferenceLine,
 } from "recharts"
 
 // 🔹 Componente para mostrar estadísticas y gráfico interactivo
 function VideoStats({ video, period }) {
-  const viewsTotal =
-    period === "week" ? video.totalViewsWeek : video.totalViewsMonth
+  const viewsTotal = period === "week" ? video.totalViewsWeek : video.totalViewsMonth
 
   // Transformar registros de Supabase en incrementos de 6h
   const chartData = []
@@ -23,6 +23,8 @@ function VideoStats({ video, period }) {
   let lastViews = 0
   records.forEach((rec) => {
     const date = new Date(rec.timestamp)
+    if (isNaN(date)) return
+
     const intervalHour = Math.floor(date.getHours() / 6) * 6
     const label = `${date.getDate()}/${date.getMonth() + 1} ${intervalHour}:00`
 
@@ -35,18 +37,22 @@ function VideoStats({ video, period }) {
     })
   })
 
-  // Para bloques de 6h incompletos, agregar línea temporal con último incremento
+  // Agregar bloque temporal si el último registro no completa las 6h
+  let lastTemporaryLabel = null
   if (records.length > 0) {
     const lastRec = records[records.length - 1]
     const lastDate = new Date(lastRec.timestamp)
-    const lastIntervalHour = Math.floor(lastDate.getHours() / 6) * 6
-    const nextLabel = `${lastDate.getDate()}/${lastDate.getMonth() + 1} ${lastIntervalHour + 6}:00`
+    if (!isNaN(lastDate)) {
+      const lastIntervalHour = Math.floor(lastDate.getHours() / 6) * 6
+      const nextHour = lastIntervalHour + 6
+      lastTemporaryLabel = `${lastDate.getDate()}/${lastDate.getMonth() + 1} ${nextHour}:00`
 
-    chartData.push({
-      interval: nextLabel,
-      views: lastRec.views - (records[records.length - 2]?.views || 0),
-      temporary: true, // marcar que es temporal
-    })
+      chartData.push({
+        interval: lastTemporaryLabel,
+        views: lastRec.views - (records[records.length - 2]?.views || 0),
+        temporary: true,
+      })
+    }
   }
 
   return (
@@ -63,12 +69,15 @@ function VideoStats({ video, period }) {
             <XAxis dataKey="interval" />
             <YAxis />
             <Tooltip />
-            <Line
-              type="monotone"
-              dataKey="views"
-              stroke="#8884d8"
-              strokeDasharray="0"
-            />
+            <Line type="monotone" dataKey="views" stroke="#8884d8" />
+            {lastTemporaryLabel && (
+              <ReferenceLine
+                x={lastTemporaryLabel}
+                stroke="red"
+                strokeDasharray="3 3"
+                label={{ value: "Temporal", position: "top" }}
+              />
+            )}
           </LineChart>
         </ResponsiveContainer>
       </div>
@@ -158,7 +167,6 @@ export default function CtrDinamico() {
 
     fetchVideos()
 
-    // Refetch cuando la pestaña vuelve a estar visible
     const handleVisibility = () => {
       if (document.visibilityState === "visible") fetchVideos()
     }
