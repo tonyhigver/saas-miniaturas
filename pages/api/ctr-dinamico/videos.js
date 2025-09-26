@@ -14,6 +14,9 @@ export default async function handler(req, res) {
   const startDateStr = startDate.toISOString().split("T")[0]
   const endDateStr = today.toISOString().split("T")[0]
 
+  console.log("🔹 Access token:", session.accessToken)
+  console.log("🔹 Period:", period)
+
   try {
     // 1️⃣ Obtener canal del usuario
     const channelRes = await fetch(
@@ -21,8 +24,13 @@ export default async function handler(req, res) {
       { headers: { Authorization: `Bearer ${session.accessToken}` } }
     )
     const channelData = await channelRes.json()
-    if (!channelData.items || !channelData.items.length)
-      return res.status(404).json({ error: "No se encontró canal de YouTube" })
+    console.log("🔹 Canal:", channelData)
+
+    if (!channelData.items || !channelData.items.length) {
+      return res.status(404).json({
+        error: "No se encontró canal de YouTube. Por favor vuelve a iniciar sesión y concede los permisos de YouTube correctamente.",
+      })
+    }
 
     const channelId = channelData.items[0].id
     const uploadsPlaylistId =
@@ -34,8 +42,13 @@ export default async function handler(req, res) {
       { headers: { Authorization: `Bearer ${session.accessToken}` } }
     )
     const playlistData = await playlistRes.json()
-    if (!playlistData.items || !playlistData.items.length)
-      return res.status(404).json({ error: "No se encontraron videos en el canal" })
+    console.log("🔹 Playlist:", playlistData)
+
+    if (!playlistData.items || !playlistData.items.length) {
+      return res.status(404).json({
+        error: "No se encontraron videos en tu canal de YouTube. Asegúrate de tener videos subidos y permisos activos.",
+      })
+    }
 
     const videoIds = playlistData.items.map((v) => v.contentDetails.videoId).join(",")
 
@@ -45,6 +58,7 @@ export default async function handler(req, res) {
       { headers: { Authorization: `Bearer ${session.accessToken}` } }
     )
     const statsData = await statsRes.json()
+    console.log("🔹 Stats:", statsData)
 
     // 4️⃣ Obtener Analytics de todos los videos en un solo fetch
     const analyticsRes = await fetch(
@@ -52,6 +66,7 @@ export default async function handler(req, res) {
       { headers: { Authorization: `Bearer ${session.accessToken}` } }
     )
     const analyticsData = await analyticsRes.json()
+    console.log("🔹 Analytics:", analyticsData)
 
     // 5️⃣ Mapear los datos de Analytics por video
     const analyticsMap = {}
@@ -78,6 +93,10 @@ export default async function handler(req, res) {
     res.status(200).json(videos)
   } catch (err) {
     console.error("❌ Error obteniendo videos y Analytics:", err)
-    res.status(500).json({ error: "Error obteniendo videos y Analytics" })
+    res.status(500).json({
+      error:
+        "Error obteniendo videos y Analytics. Intenta refrescar sesión o revisa permisos de YouTube.",
+      details: err.message,
+    })
   }
 }
