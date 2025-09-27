@@ -11,8 +11,6 @@ import {
 
 export default function VideoChart({ title, viewsByDay }) {
   const records = viewsByDay || []
-
-  // Total real del último registro
   const viewsTotal = records.length > 0 ? records[records.length - 1].views : 0
 
   let chartData = []
@@ -37,7 +35,6 @@ export default function VideoChart({ title, viewsByDay }) {
     let pointer = new Date(firstDate)
     let lastViews = 0
 
-    // Construir datos por bloques de 6 horas
     while (pointer <= currentBlockStart) {
       const blockStart = new Date(pointer)
       const blockEnd = new Date(pointer)
@@ -53,7 +50,7 @@ export default function VideoChart({ title, viewsByDay }) {
       lastViews = endViews
 
       chartData.push({
-        interval: `${blockStart.getDate()}/${blockStart.getMonth() + 1} ${String(blockStart.getHours()).padStart(2, '0')}:00`,
+        interval: ${blockStart.getDate()}/${blockStart.getMonth() + 1} ${String(blockStart.getHours()).padStart(2, '0')}:00,
         views: increment > 0 ? increment : 0,
       })
 
@@ -64,34 +61,24 @@ export default function VideoChart({ title, viewsByDay }) {
 
     const nowIncrement = (records[records.length - 1].views || 0) - lastViews
     nowPoint = {
-      interval: `${now.getDate()}/${now.getMonth() + 1} ${String(now.getHours()).padStart(2, '0')}:00`,
+      interval: ${now.getDate()}/${now.getMonth() + 1} ${String(now.getHours()).padStart(2, '0')}:00,
       views: nowIncrement > 0 ? nowIncrement : 0,
     }
     chartData.push(nowPoint)
   }
 
-  // 🔹 Customized para dibujar recuadro en medio de la línea roja
-  const NowLabel = (props) => {
-    const { xAxisMap, yAxisMap, width, height, offset } = props
-
-    if (!lastBlockPoint || !nowPoint) return null
-
-    // Índices para calcular posición X
-    const lastIndex = chartData.length - 2
-    const nowIndex = chartData.length - 1
-    const xStep = width / (chartData.length - 1)
-    const xMid = xStep * lastIndex + xStep / 2
-
-    // Escala Y proporcional al valor máximo
-    const maxViews = Math.max(...chartData.map(d => d.views))
-    const yMid = height - (nowPoint.views / (maxViews || 1)) * height - 20
+  const NowLabel = ({ points }) => {
+    if (!points || points.length < 2) return null
+    const [p1, p2] = points
+    const midX = (p1.x + p2.x) / 2
+    const midY = (p1.y + p2.y) / 2
 
     return (
       <g>
-        <rect x={xMid - 30} y={yMid} width={60} height={20} fill="red" rx={4} ry={4} />
+        <rect x={midX - 30} y={midY - 20} width={60} height={20} fill="red" rx={4} ry={4} />
         <text
-          x={xMid}
-          y={yMid + 14}
+          x={midX}
+          y={midY - 6}
           fill="#fff"
           fontSize={12}
           fontWeight="bold"
@@ -114,7 +101,6 @@ export default function VideoChart({ title, viewsByDay }) {
           <YAxis allowDecimals={false} />
           <Tooltip />
           <Line type="monotone" dataKey="views" stroke="#8884d8" dot={false} />
-          {/* Línea roja desde último bloque hasta ahora */}
           {lastBlockPoint && nowPoint && (
             <Line
               type="monotone"
@@ -123,9 +109,10 @@ export default function VideoChart({ title, viewsByDay }) {
               stroke="red"
               dot={false}
               activeDot={false}
-            />
+            >
+              <Customized component={NowLabel} />
+            </Line>
           )}
-          <Customized component={NowLabel} />
         </LineChart>
       </ResponsiveContainer>
     </div>
