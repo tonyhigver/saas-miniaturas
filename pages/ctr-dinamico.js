@@ -14,17 +14,19 @@ import {
 
 // 🔹 Componente para mostrar estadísticas y gráfico interactivo
 function VideoStats({ video, period }) {
-  const viewsTotal =
-    period === "week" ? video.viewsLastWeek : video.viewsLastMonth
-
   const records = video.viewsByDay || []
+
+  // 🔹 Total real del último registro
+  const viewsTotal =
+    records.length > 0
+      ? records[records.length - 1].views
+      : 0
 
   let chartData = []
   let lastTemporaryLabel = null
   let lastTemporaryValue = null
 
   if (records.length > 0) {
-    // Convertir registros a Date + views
     const parsedRecords = records.map((r) => ({
       timestamp: new Date(r.timestamp),
       views: r.views,
@@ -34,67 +36,55 @@ function VideoStats({ video, period }) {
     firstDate.setMinutes(0, 0, 0)
     firstDate.setHours(Math.floor(firstDate.getHours() / 6) * 6)
 
-    const now = new Date()
-    now.setMinutes(0, 0, 0)
-    now.setHours(Math.floor(now.getHours() / 6) * 6)
+    const lastDate = new Date(parsedRecords[parsedRecords.length - 1].timestamp)
+    lastDate.setMinutes(0, 0, 0)
+    lastDate.setHours(Math.floor(lastDate.getHours() / 6) * 6)
 
     let pointer = new Date(firstDate)
+    let lastViews = 0
 
-    while (pointer <= now) {
+    while (pointer <= lastDate) {
       const blockStart = new Date(pointer)
       const blockEnd = new Date(pointer)
       blockEnd.setHours(blockEnd.getHours() + 6)
 
-      // último registro antes o igual al inicio
-      const startRec = [...parsedRecords]
-        .filter((r) => r.timestamp <= blockStart)
-        .pop()
-      const startViews = startRec ? startRec.views : 0
+      const startRec = parsedRecords.filter(r => r.timestamp <= blockStart).pop()
+      const startViews = startRec ? startRec.views : lastViews
 
-      // último registro antes o igual al final
-      const endRec = [...parsedRecords]
-        .filter((r) => r.timestamp <= blockEnd)
-        .pop()
+      const endRec = parsedRecords.filter(r => r.timestamp <= blockEnd).pop()
       const endViews = endRec ? endRec.views : startViews
 
       const increment = endViews - startViews
+      lastViews = endViews
 
       chartData.push({
-        interval: `${blockStart.getDate()}/${
-          blockStart.getMonth() + 1
-        } ${String(blockStart.getHours()).padStart(2, "0")}:00`,
+        interval: `${blockStart.getDate()}/${blockStart.getMonth() + 1} ${String(blockStart.getHours()).padStart(2, "0")}:00`,
         views: increment > 0 ? increment : 0,
       })
 
       pointer = blockEnd
     }
 
-    // 🔹 Línea temporal en el bloque actual incompleto
+    // 🔹 Línea temporal (último bloque incompleto)
     const lastRec = parsedRecords[parsedRecords.length - 1]
-    const lastDate = lastRec.timestamp
-    const lastIntervalHour = Math.floor(lastDate.getHours() / 6) * 6
+    const lastIntervalHour = Math.floor(lastRec.timestamp.getHours() / 6) * 6
     const nextHour = lastIntervalHour + 6
 
-    const lastIntervalStart = new Date(lastDate)
+    const lastIntervalStart = new Date(lastRec.timestamp)
     lastIntervalStart.setHours(lastIntervalHour, 0, 0, 0)
 
-    const startRec = [...parsedRecords]
-      .filter((r) => r.timestamp <= lastIntervalStart)
-      .pop()
+    const startRec = parsedRecords.filter(r => r.timestamp <= lastIntervalStart).pop()
     const startViews = startRec ? startRec.views : 0
     lastTemporaryValue = lastRec.views - startViews
 
-    lastTemporaryLabel = `${lastDate.getDate()}/${
-      lastDate.getMonth() + 1
-    } ${String(nextHour).padStart(2, "0")}:00`
+    lastTemporaryLabel = `${lastRec.timestamp.getDate()}/${lastRec.timestamp.getMonth() + 1} ${String(nextHour).padStart(2, "0")}:00`
   }
 
   return (
     <div className="p-4 border rounded-lg bg-gray-200 text-black mt-4">
       <h3 className="font-semibold mb-2">{video.title}</h3>
       <p>
-        Visualizaciones {period === "week" ? "última semana" : "último mes"}:{" "}
-        {viewsTotal}
+        Visualizaciones {period === "week" ? "última semana" : "último mes"}: {viewsTotal}
       </p>
 
       <div style={{ width: "100%", height: 300 }} className="mb-4">
@@ -141,13 +131,7 @@ function VideoStats({ video, period }) {
 }
 
 // 🔹 Componente para seleccionar videos y periodo
-function VideoSelector({
-  videos,
-  selectedVideo,
-  setSelectedVideo,
-  period,
-  setPeriod,
-}) {
+function VideoSelector({ videos, selectedVideo, setSelectedVideo, period, setPeriod }) {
   return (
     <div className="mt-6 p-4 border rounded-xl shadow bg-gray-100 text-black">
       <h2 className="text-lg font-bold mb-2">Tus videos recientes</h2>
@@ -167,15 +151,11 @@ function VideoSelector({
       <select
         className="w-full p-2 border rounded mb-4 text-black"
         value={selectedVideo?.id || ""}
-        onChange={(e) =>
-          setSelectedVideo(videos.find((v) => v.id === e.target.value))
-        }
+        onChange={(e) => setSelectedVideo(videos.find(v => v.id === e.target.value))}
       >
         <option value="">Selecciona un video</option>
         {videos.map((video) => (
-          <option key={video.id} value={video.id}>
-            {video.title}
-          </option>
+          <option key={video.id} value={video.id}>{video.title}</option>
         ))}
       </select>
 
