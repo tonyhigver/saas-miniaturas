@@ -68,29 +68,35 @@ export default function VideoChart({ title, viewsByDay }) {
     chartData.push(nowPoint)
   }
 
-  // 🔹 Customized que usa viewBox para posicionar el recuadro
-  const NowLabel = (props) => {
+  // 🔹 Customized para colocar el recuadro sobre la línea roja
+  const NowLabel = ({ xAxisMap, yAxisMap, offset }) => {
     if (!lastBlockPoint || !nowPoint) return null
-    const { viewBox } = props
-    const { x, y, width, height } = viewBox
 
+    const xAxis = xAxisMap[Object.keys(xAxisMap)[0]]
+    const yAxis = yAxisMap[Object.keys(yAxisMap)[0]]
+
+    if (!xAxis || !yAxis) return null
+
+    // Tomamos los puntos del último bloque y ahora
     const lastIndex = chartData.length - 2
     const nowIndex = chartData.length - 1
 
-    // Posición X: medio entre último bloque y ahora
-    const xStep = width / (chartData.length - 1)
-    const xMid = xStep * lastIndex + xStep / 2
+    const lastX = xAxis.scale(lastIndex)
+    const nowX = xAxis.scale(nowIndex)
 
-    // Posición Y proporcional al valor del incremento
-    const maxViews = Math.max(...chartData.map(d => d.views))
-    const yMid = height - (nowPoint.views / (maxViews || 1)) * height - 20
+    const lastY = yAxis.scale(lastBlockPoint.views)
+    const nowY = yAxis.scale(nowPoint.views)
+
+    // Medio punto
+    const midX = (lastX + nowX) / 2
+    const midY = (lastY + nowY) / 2
 
     return (
       <g>
-        <rect x={xMid - 30} y={yMid} width={60} height={20} fill="red" rx={4} ry={4} />
+        <rect x={midX - 30} y={midY - 20} width={60} height={20} fill="red" rx={4} ry={4} />
         <text
-          x={xMid}
-          y={yMid + 14}
+          x={midX}
+          y={midY - 6}
           fill="#fff"
           fontSize={12}
           fontWeight="bold"
