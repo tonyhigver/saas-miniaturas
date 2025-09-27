@@ -1,4 +1,4 @@
-import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, ReferenceLine } from 'recharts'
+import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, ReferenceLine, Label } from 'recharts'
 
 export default function VideoChart({ title, viewsByDay }) {
   const records = viewsByDay || []
@@ -59,14 +59,13 @@ export default function VideoChart({ title, viewsByDay }) {
     const lastBlockStart = new Date(lastRec.timestamp)
     lastBlockStart.setHours(lastBlockStartHour, 0, 0, 0)
 
-    // Último registro del bloque anterior de 6h
     const startRec = parsedRecords.filter(r => r.timestamp <= lastBlockStart).pop()
     const startViews = startRec ? startRec.views : 0
 
     lastTemporaryValue = lastRec.views - startViews
     if (lastTemporaryValue < 0) lastTemporaryValue = 0
 
-    // Mostrar línea roja al final del gráfico con hora actual
+    // 🔹 Línea roja final: hora actual
     const nowDate = new Date()
     lastTemporaryLabel = `${nowDate.getDate()}/${nowDate.getMonth() + 1} ${String(nowDate.getHours()).padStart(2, '0')}:00`
   }
@@ -89,9 +88,12 @@ export default function VideoChart({ title, viewsByDay }) {
               stroke="red"
               strokeDasharray="3 3"
               label={{
-                value: `Hora: ${new Date().getHours()}:00 | +${lastTemporaryValue}`,
-                position: 'insideBottom',
+                value: `${lastTemporaryLabel}\n+${lastTemporaryValue}`,
+                position: 'insideTop',
                 fill: 'red',
+                fontSize: 12,
+                fontWeight: 'bold',
+                textAnchor: 'middle',
               }}
             />
           )}
