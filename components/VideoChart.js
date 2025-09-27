@@ -17,18 +17,20 @@ export default function VideoChart({ title, viewsByDay }) {
       views: r.views,
     }))
 
+    // 🔹 Primer bloque de 6h
     const firstDate = new Date(parsedRecords[0].timestamp)
     firstDate.setMinutes(0, 0, 0)
     firstDate.setHours(Math.floor(firstDate.getHours() / 6) * 6)
 
     const now = new Date()
     now.setMinutes(0, 0, 0)
-    const lastHourBlock = Math.floor(now.getHours() / 6) * 6
-    now.setHours(lastHourBlock)
+    const currentHourBlock = Math.floor(now.getHours() / 6) * 6
+    now.setHours(currentHourBlock)
 
     let pointer = new Date(firstDate)
     let lastViews = 0
 
+    // 🔹 Construir datos por bloques de 6h
     while (pointer <= now) {
       const blockStart = new Date(pointer)
       const blockEnd = new Date(pointer)
@@ -53,18 +55,22 @@ export default function VideoChart({ title, viewsByDay }) {
       pointer = blockEnd
     }
 
-    // 🔹 Línea roja para mostrar incremento desde el último bloque hasta ahora
+    // 🔹 Línea roja: incremento respecto al bloque anterior de 6h
     const lastRec = parsedRecords[parsedRecords.length - 1]
     const lastBlockStartHour = Math.floor(lastRec.timestamp.getHours() / 6) * 6
     const lastBlockStart = new Date(lastRec.timestamp)
     lastBlockStart.setHours(lastBlockStartHour, 0, 0, 0)
 
+    // Último registro del bloque anterior de 6h
     const startRec = parsedRecords.filter(r => r.timestamp <= lastBlockStart).pop()
     const startViews = startRec ? startRec.views : 0
-    lastTemporaryValue = lastRec.views - startViews
 
-    const nextHour = lastBlockStartHour + 6
-    lastTemporaryLabel = `${lastRec.timestamp.getDate()}/${lastRec.timestamp.getMonth() + 1} ${String(nextHour).padStart(2, '0')}:00`
+    lastTemporaryValue = lastRec.views - startViews
+    if (lastTemporaryValue < 0) lastTemporaryValue = 0
+
+    // Mostrar línea roja al final del gráfico, hora actual
+    const nowDate = new Date()
+    lastTemporaryLabel = `${nowDate.getDate()}/${nowDate.getMonth() + 1} ${String(nowDate.getHours()).padStart(2, '0')}:00`
   }
 
   return (
