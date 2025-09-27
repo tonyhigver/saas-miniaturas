@@ -11,7 +11,6 @@ import {
 
 export default function VideoChart({ title, viewsByDay }) {
   const records = viewsByDay || []
-
   const viewsTotal = records.length > 0 ? records[records.length - 1].views : 0
 
   let chartData = []
@@ -68,28 +67,11 @@ export default function VideoChart({ title, viewsByDay }) {
     chartData.push(nowPoint)
   }
 
-  // 🔹 Customized para colocar el recuadro sobre la línea roja
-  const NowLabel = ({ xAxisMap, yAxisMap, offset }) => {
-    if (!lastBlockPoint || !nowPoint) return null
-
-    const xAxis = xAxisMap[Object.keys(xAxisMap)[0]]
-    const yAxis = yAxisMap[Object.keys(yAxisMap)[0]]
-
-    if (!xAxis || !yAxis) return null
-
-    // Tomamos los puntos del último bloque y ahora
-    const lastIndex = chartData.length - 2
-    const nowIndex = chartData.length - 1
-
-    const lastX = xAxis.scale(lastIndex)
-    const nowX = xAxis.scale(nowIndex)
-
-    const lastY = yAxis.scale(lastBlockPoint.views)
-    const nowY = yAxis.scale(nowPoint.views)
-
-    // Medio punto
-    const midX = (lastX + nowX) / 2
-    const midY = (lastY + nowY) / 2
+  const NowLabel = ({ points }) => {
+    if (!points || points.length < 2) return null
+    const [p1, p2] = points
+    const midX = (p1.x + p2.x) / 2
+    const midY = (p1.y + p2.y) / 2
 
     return (
       <g>
@@ -127,9 +109,10 @@ export default function VideoChart({ title, viewsByDay }) {
               stroke="red"
               dot={false}
               activeDot={false}
-            />
+            >
+              <Customized component={NowLabel} />
+            </Line>
           )}
-          <Customized component={NowLabel} />
         </LineChart>
       </ResponsiveContainer>
     </div>
