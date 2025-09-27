@@ -67,18 +67,25 @@ export default function VideoChart({ title, viewsByDay }) {
     chartData.push(nowPoint)
   }
 
-  const NowLabel = ({ points }) => {
-    if (!points || points.length < 2) return null
-    const [p1, p2] = points
-    const midX = (p1.x + p2.x) / 2
-    const midY = (p1.y + p2.y) / 2
+  // 🔹 Componente personalizado para dibujar el recuadro sobre la línea roja
+  const NowLabel = ({ width, height }) => {
+    if (!lastBlockPoint || !nowPoint) return null
+
+    const lastIndex = chartData.length - 2
+    const nowIndex = chartData.length - 1
+
+    const xStep = width / (chartData.length - 1)
+    const midX = xStep * lastIndex + xStep / 2
+
+    const maxViews = Math.max(...chartData.map(d => d.views))
+    const midY = height - (nowPoint.views / (maxViews || 1)) * height - 20
 
     return (
       <g>
-        <rect x={midX - 30} y={midY - 20} width={60} height={20} fill="red" rx={4} ry={4} />
+        <rect x={midX - 30} y={midY} width={60} height={20} fill="red" rx={4} ry={4} />
         <text
           x={midX}
-          y={midY - 6}
+          y={midY + 14}
           fill="#fff"
           fontSize={12}
           fontWeight="bold"
@@ -109,10 +116,9 @@ export default function VideoChart({ title, viewsByDay }) {
               stroke="red"
               dot={false}
               activeDot={false}
-            >
-              <Customized component={NowLabel} />
-            </Line>
+            />
           )}
+          <Customized component={NowLabel} />
         </LineChart>
       </ResponsiveContainer>
     </div>
