@@ -15,62 +15,78 @@ import {
 // 🔹 Componente para mostrar estadísticas y gráfico interactivo
 function VideoStats({ video, period }) {
   const viewsTotal =
-    period === "week" ? video.totalViewsWeek : video.totalViewsMonth
+    period === "week" ? video.viewsLastWeek : video.viewsLastMonth
 
   const records = video.viewsByDay || []
 
-  // 🔹 Generar todos los intervalos de 6h desde el primer registro hasta ahora
   let chartData = []
-  if (records.length > 0) {
-    const firstDate = new Date(records[0].timestamp)
-    const lastDate = new Date(records[records.length - 1].timestamp)
+  let lastTemporaryLabel = null
+  let lastTemporaryValue = null
 
-    // normalizar inicio al múltiplo de 6h más cercano hacia atrás
+  if (records.length > 0) {
+    // Convertir registros a Date + views
+    const parsedRecords = records.map((r) => ({
+      timestamp: new Date(r.timestamp),
+      views: r.views,
+    }))
+
+    const firstDate = new Date(parsedRecords[0].timestamp)
     firstDate.setMinutes(0, 0, 0)
     firstDate.setHours(Math.floor(firstDate.getHours() / 6) * 6)
 
-    // normalizar fin al múltiplo de 6h hacia adelante
     const now = new Date()
     now.setMinutes(0, 0, 0)
     now.setHours(Math.floor(now.getHours() / 6) * 6)
 
     let pointer = new Date(firstDate)
-    let lastViews = 0
 
     while (pointer <= now) {
-      // buscar el último registro <= al bloque actual
-      const relevant = records.filter(
-        (r) => new Date(r.timestamp) <= pointer
-      )
-      const currentViews =
-        relevant.length > 0 ? relevant[relevant.length - 1].views : lastViews
+      const blockStart = new Date(pointer)
+      const blockEnd = new Date(pointer)
+      blockEnd.setHours(blockEnd.getHours() + 6)
 
-      const increment = currentViews - lastViews
-      lastViews = currentViews
+      // último registro antes o igual al inicio
+      const startRec = [...parsedRecords]
+        .filter((r) => r.timestamp <= blockStart)
+        .pop()
+      const startViews = startRec ? startRec.views : 0
+
+      // último registro antes o igual al final
+      const endRec = [...parsedRecords]
+        .filter((r) => r.timestamp <= blockEnd)
+        .pop()
+      const endViews = endRec ? endRec.views : startViews
+
+      const increment = endViews - startViews
 
       chartData.push({
-        interval: `${pointer.getDate()}/${pointer.getMonth() + 1} ${String(
-          pointer.getHours()
-        ).padStart(2, "0")}:00`,
+        interval: `${blockStart.getDate()}/${
+          blockStart.getMonth() + 1
+        } ${String(blockStart.getHours()).padStart(2, "0")}:00`,
         views: increment > 0 ? increment : 0,
       })
 
-      pointer.setHours(pointer.getHours() + 6)
+      pointer = blockEnd
     }
-  }
 
-  // 🔹 Línea temporal (último bloque incompleto)
-  let lastTemporaryLabel = null
-  if (records.length > 0) {
-    const lastRec = records[records.length - 1]
-    const lastDate = new Date(lastRec.timestamp)
-    if (!isNaN(lastDate)) {
-      const lastIntervalHour = Math.floor(lastDate.getHours() / 6) * 6
-      const nextHour = lastIntervalHour + 6
-      lastTemporaryLabel = `${lastDate.getDate()}/${
-        lastDate.getMonth() + 1
-      } ${String(nextHour).padStart(2, "0")}:00`
-    }
+    // 🔹 Línea temporal en el bloque actual incompleto
+    const lastRec = parsedRecords[parsedRecords.length - 1]
+    const lastDate = lastRec.timestamp
+    const lastIntervalHour = Math.floor(lastDate.getHours() / 6) * 6
+    const nextHour = lastIntervalHour + 6
+
+    const lastIntervalStart = new Date(lastDate)
+    lastIntervalStart.setHours(lastIntervalHour, 0, 0, 0)
+
+    const startRec = [...parsedRecords]
+      .filter((r) => r.timestamp <= lastIntervalStart)
+      .pop()
+    const startViews = startRec ? startRec.views : 0
+    lastTemporaryValue = lastRec.views - startViews
+
+    lastTemporaryLabel = `${lastDate.getDate()}/${
+      lastDate.getMonth() + 1
+    } ${String(nextHour).padStart(2, "0")}:00`
   }
 
   return (
@@ -86,7 +102,7 @@ function VideoStats({ video, period }) {
           <LineChart data={chartData}>
             <CartesianGrid stroke="#ccc" strokeDasharray="3 3" />
             <XAxis dataKey="interval" />
-            <YAxis />
+            <YAxis allowDecimals={false} />
             <Tooltip />
             <Line type="monotone" dataKey="views" stroke="#8884d8" />
 
@@ -95,7 +111,11 @@ function VideoStats({ video, period }) {
                 x={lastTemporaryLabel}
                 stroke="red"
                 strokeDasharray="3 3"
-                label={{ value: "Temporal", position: "top" }}
+                label={{
+                  value: `+${lastTemporaryValue}`,
+                  position: "top",
+                  fill: "red",
+                }}
               />
             )}
           </LineChart>
@@ -171,7 +191,6 @@ export default function CtrDinamico() {
   const [selectedVideo, setSelectedVideo] = useState(null)
   const [period, setPeriod] = useState("week")
 
-  // 🔹 Traer videos desde Supabase via API
   useEffect(() => {
     if (!session) return
     let isMounted = true
