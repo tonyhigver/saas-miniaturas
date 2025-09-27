@@ -1,20 +1,38 @@
+// pages/ctr-dinamico.js
 import { useEffect, useState } from "react"
 import { useSession, signIn } from "next-auth/react"
-import VideoChart from "../components/VideoChart"
+import VideoChart from "../components/VideoChart" // ⬅️ importa tu componente
 
 function VideoStats({ video, period }) {
-  const viewsTotal = video.viewsByDay?.length > 0
-    ? video.viewsByDay[video.viewsByDay.length - 1].views
-    : 0
+  const records = video.viewsByDay || []
+  const viewsTotal =
+    records.length > 0 ? records[records.length - 1].views : 0
 
   return (
     <div className="p-4 border rounded-lg bg-gray-200 text-black mt-4">
       <h3 className="font-semibold mb-2">{video.title}</h3>
       <p>
-        Visualizaciones {period === "week" ? "última semana" : "último mes"}: {viewsTotal}
+        Visualizaciones {period === "week" ? "última semana" : "último mes"}:{" "}
+        {viewsTotal}
       </p>
 
+      {/* ⬇️ usamos el nuevo VideoChart */}
       <VideoChart title={video.title} viewsByDay={video.viewsByDay} />
+
+      <div className="mt-4 flex space-x-2">
+        <button
+          className="bg-blue-300 px-4 py-2 rounded text-black hover:bg-blue-400"
+          onClick={() => alert("Cambiar miniatura")}
+        >
+          Cambiar miniatura
+        </button>
+        <button
+          className="bg-green-300 px-4 py-2 rounded text-black hover:bg-green-400"
+          onClick={() => alert("Cambiar título")}
+        >
+          Cambiar título
+        </button>
+      </div>
     </div>
   )
 }
@@ -39,11 +57,15 @@ function VideoSelector({ videos, selectedVideo, setSelectedVideo, period, setPer
       <select
         className="w-full p-2 border rounded mb-4 text-black"
         value={selectedVideo?.id || ""}
-        onChange={(e) => setSelectedVideo(videos.find(v => v.id === e.target.value))}
+        onChange={(e) =>
+          setSelectedVideo(videos.find((v) => v.id === e.target.value))
+        }
       >
         <option value="">Selecciona un video</option>
         {videos.map((video) => (
-          <option key={video.id} value={video.id}>{video.title}</option>
+          <option key={video.id} value={video.id}>
+            {video.title}
+          </option>
         ))}
       </select>
 

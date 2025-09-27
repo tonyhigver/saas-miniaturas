@@ -1,3 +1,4 @@
+// pages/api/ctr-dinamico/videos.js
 import { getSession } from "next-auth/react"
 import { createClient } from "@supabase/supabase-js"
 import fetch from "node-fetch"
@@ -11,7 +12,7 @@ export default async function handler(req, res) {
   const session = await getSession({ req })
   if (!session) return res.status(401).json({ error: "No autenticado" })
 
-  const { period } = req.query
+  const { period } = req.query // "week" o "month"
   const today = new Date()
   const startDate = new Date(today)
   if (period === "week") startDate.setDate(today.getDate() - 6)

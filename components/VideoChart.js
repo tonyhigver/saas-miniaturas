@@ -32,7 +32,7 @@ export default function VideoChart({ title, viewsByDay }) {
     const currentBlockStart = new Date(now)
     currentBlockStart.setHours(Math.floor(now.getHours() / 6) * 6, 0, 0, 0)
 
-    // Extender gráfico 3 días más
+    // 🔹 Extender hasta 3 días después del bloque actual
     const extendedEnd = new Date(currentBlockStart)
     extendedEnd.setDate(extendedEnd.getDate() + 3)
 
@@ -54,19 +54,28 @@ export default function VideoChart({ title, viewsByDay }) {
       lastViews = endViews
 
       chartData.push({
-        interval: `${blockStart.getDate()}/${blockStart.getMonth() + 1} ${String(blockStart.getHours()).padStart(2, '0')}:00`,
+        interval: `${blockStart.getDate()}/${blockStart.getMonth() + 1} ${String(
+          blockStart.getHours()
+        ).padStart(2, '0')}:00`,
         views: increment > 0 ? increment : 0,
       })
 
       pointer = blockEnd
     }
 
-    lastBlockPoint = chartData[chartData.length - 2] // penúltimo bloque real
+    lastBlockPoint = chartData[chartData.length - 2] // el bloque anterior al actual
+    const nowIncrement = (records[records.length - 1].views || 0) - lastViews
 
-    // Último bloque visible (actual)
-    nowPoint = chartData[chartData.length - 1]
+    nowPoint = {
+      interval: `${now.getDate()}/${now.getMonth() + 1} ${String(
+        now.getHours()
+      ).padStart(2, '0')}:00`,
+      views: nowIncrement > 0 ? nowIncrement : 0,
+    }
+    chartData.push(nowPoint)
   }
 
+  // 🔹 Recuadro en medio de la línea roja
   const NowLabel = ({ points }) => {
     if (!points || points.length < 2) return null
     const [p1, p2] = points
@@ -75,16 +84,34 @@ export default function VideoChart({ title, viewsByDay }) {
 
     return (
       <g>
-        <rect x={midX - 30} y={midY - 20} width={60} height={20} fill="red" rx={4} ry={4} />
+        <rect
+          x={midX - 40}
+          y={midY - 30}
+          width={80}
+          height={30}
+          fill="red"
+          rx={6}
+          ry={6}
+        />
         <text
           x={midX}
-          y={midY - 6}
+          y={midY - 15}
           fill="#fff"
           fontSize={12}
           fontWeight="bold"
           textAnchor="middle"
         >
-          Ahora +{nowPoint.views || 0}
+          {nowPoint.interval}
+        </text>
+        <text
+          x={midX}
+          y={midY - 3}
+          fill="#fff"
+          fontSize={12}
+          fontWeight="bold"
+          textAnchor="middle"
+        >
+          +{nowPoint.views || 0}
         </text>
       </g>
     )
