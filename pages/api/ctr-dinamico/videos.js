@@ -51,7 +51,7 @@ export default async function handler(req, res) {
     })
 
     const videoIds = videosInPeriod.map(v => v.contentDetails.videoId).join(",")
-    if (!videoIds) return res.status(200).json([]) // No hay videos en el periodo
+    if (!videoIds) return res.status(200).json([])
 
     // 🔹 2️⃣ Obtener estadísticas de YouTube
     const statsRes = await fetch(
@@ -92,7 +92,7 @@ export default async function handler(req, res) {
       viewsLastMonth: period === "month"
         ? (analyticsMap[v.id]?.slice(-30).reduce((a, b) => a + b.views, 0) || 0)
         : undefined,
-      // 🔥 Aquí está la corrección: viewsByDay contiene objetos completos
+      // 🔹 viewsByDay ahora contiene objetos completos con timestamp
       viewsByDay: analyticsMap[v.id] || []
     }))
 
