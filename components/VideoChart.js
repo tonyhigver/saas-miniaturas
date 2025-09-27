@@ -12,6 +12,7 @@ import {
 export default function VideoChart({ title, viewsByDay }) {
   const records = viewsByDay || []
 
+  // Total real del último registro
   const viewsTotal = records.length > 0 ? records[records.length - 1].views : 0
 
   let chartData = []
@@ -36,6 +37,7 @@ export default function VideoChart({ title, viewsByDay }) {
     let pointer = new Date(firstDate)
     let lastViews = 0
 
+    // Construir datos por bloques de 6 horas
     while (pointer <= currentBlockStart) {
       const blockStart = new Date(pointer)
       const blockEnd = new Date(pointer)
@@ -68,20 +70,19 @@ export default function VideoChart({ title, viewsByDay }) {
     chartData.push(nowPoint)
   }
 
-  // 🔹 Customized que usa viewBox para posicionar el recuadro
+  // 🔹 Customized para dibujar recuadro en medio de la línea roja
   const NowLabel = (props) => {
-    if (!lastBlockPoint || !nowPoint) return null
-    const { viewBox } = props
-    const { x, y, width, height } = viewBox
+    const { xAxisMap, yAxisMap, width, height, offset } = props
 
+    if (!lastBlockPoint || !nowPoint) return null
+
+    // Índices para calcular posición X
     const lastIndex = chartData.length - 2
     const nowIndex = chartData.length - 1
-
-    // Posición X: medio entre último bloque y ahora
     const xStep = width / (chartData.length - 1)
     const xMid = xStep * lastIndex + xStep / 2
 
-    // Posición Y proporcional al valor del incremento
+    // Escala Y proporcional al valor máximo
     const maxViews = Math.max(...chartData.map(d => d.views))
     const yMid = height - (nowPoint.views / (maxViews || 1)) * height - 20
 
@@ -113,6 +114,7 @@ export default function VideoChart({ title, viewsByDay }) {
           <YAxis allowDecimals={false} />
           <Tooltip />
           <Line type="monotone" dataKey="views" stroke="#8884d8" dot={false} />
+          {/* Línea roja desde último bloque hasta ahora */}
           {lastBlockPoint && nowPoint && (
             <Line
               type="monotone"
