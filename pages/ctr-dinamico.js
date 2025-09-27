@@ -36,14 +36,14 @@ function VideoStats({ video, period }) {
     firstDate.setMinutes(0, 0, 0)
     firstDate.setHours(Math.floor(firstDate.getHours() / 6) * 6)
 
-    const lastDate = new Date(parsedRecords[parsedRecords.length - 1].timestamp)
-    lastDate.setMinutes(0, 0, 0)
-    lastDate.setHours(Math.floor(lastDate.getHours() / 6) * 6)
+    const now = new Date()
+    now.setMinutes(0, 0, 0)
+    now.setHours(Math.floor(now.getHours() / 6) * 6)
 
     let pointer = new Date(firstDate)
     let lastViews = 0
 
-    while (pointer <= lastDate) {
+    while (pointer <= now) {
       const blockStart = new Date(pointer)
       const blockEnd = new Date(pointer)
       blockEnd.setHours(blockEnd.getHours() + 6)
@@ -65,19 +65,16 @@ function VideoStats({ video, period }) {
       pointer = blockEnd
     }
 
-    // 🔹 Línea temporal (último bloque incompleto)
+    // 🔹 Línea roja temporal: último incremento desde hace 6h
     const lastRec = parsedRecords[parsedRecords.length - 1]
-    const lastIntervalHour = Math.floor(lastRec.timestamp.getHours() / 6) * 6
-    const nextHour = lastIntervalHour + 6
+    const lastBlockStart = new Date(lastRec.timestamp)
+    lastBlockStart.setHours(Math.floor(lastRec.timestamp.getHours() / 6) * 6, 0, 0, 0)
 
-    const lastIntervalStart = new Date(lastRec.timestamp)
-    lastIntervalStart.setHours(lastIntervalHour, 0, 0, 0)
-
-    const startRec = parsedRecords.filter(r => r.timestamp <= lastIntervalStart).pop()
+    const startRec = parsedRecords.filter(r => r.timestamp <= lastBlockStart).pop()
     const startViews = startRec ? startRec.views : 0
-    lastTemporaryValue = lastRec.views - startViews
 
-    lastTemporaryLabel = `${lastRec.timestamp.getDate()}/${lastRec.timestamp.getMonth() + 1} ${String(nextHour).padStart(2, "0")}:00`
+    lastTemporaryValue = lastRec.views - startViews
+    lastTemporaryLabel = `${lastRec.timestamp.getDate()}/${lastRec.timestamp.getMonth() + 1} ${String(lastRec.timestamp.getHours()).padStart(2, "0")}:00`
   }
 
   return (
