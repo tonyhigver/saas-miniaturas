@@ -12,7 +12,6 @@ import {
 export default function VideoChart({ title, viewsByDay }) {
   const records = viewsByDay || []
 
-  // 🔹 Total real del último registro
   const viewsTotal = records.length > 0 ? records[records.length - 1].views : 0
 
   let chartData = []
@@ -59,10 +58,8 @@ export default function VideoChart({ title, viewsByDay }) {
       pointer = blockEnd
     }
 
-    // 🔹 Último bloque
     lastBlockPoint = chartData[chartData.length - 1]
 
-    // 🔹 Ahora
     const nowIncrement = (records[records.length - 1].views || 0) - lastViews
     nowPoint = {
       interval: `${now.getDate()}/${now.getMonth() + 1} ${String(now.getHours()).padStart(2, '0')}:00`,
@@ -71,36 +68,28 @@ export default function VideoChart({ title, viewsByDay }) {
     chartData.push(nowPoint)
   }
 
-  // 🔹 Componente para dibujar el recuadro en medio de la línea roja
-  const CustomizedNowLabel = (props) => {
+  // 🔹 Customized para dibujar el recuadro en medio de la línea roja
+  const NowLabel = (props) => {
+    const { chartWidth, chartHeight } = props
+
     if (!lastBlockPoint || !nowPoint) return null
 
-    const { width, height, xAxisMap, yAxisMap, offset } = props
-    const xAxis = xAxisMap[0]
-    const yAxis = yAxisMap[0]
+    // Usaremos índices para calcular la posición horizontal
+    const lastIndex = chartData.length - 2
+    const nowIndex = chartData.length - 1
+    const xStep = chartWidth / (chartData.length - 1)
+    const xMid = xStep * lastIndex + xStep / 2
 
-    // Posición del recuadro en coordenadas del canvas
-    const x0 = xAxis.scale(lastBlockPoint.interval)
-    const x1 = xAxis.scale(nowPoint.interval)
-    const y0 = yAxis.scale(nowPoint.views)
-
-    const xMid = x0 + (x1 - x0) / 2
+    // Para Y usamos una escala simple proporcional al valor máximo
+    const maxViews = Math.max(...chartData.map(d => d.views))
+    const yMid = chartHeight - (nowPoint.views / (maxViews || 1)) * chartHeight - 30
 
     return (
       <g>
-        <rect
-          x={xMid - 30}
-          y={y0 - 25}
-          width={60}
-          height={20}
-          fill="red"
-          opacity={0.8}
-          rx={4}
-          ry={4}
-        />
+        <rect x={xMid - 30} y={yMid} width={60} height={20} fill="red" rx={4} ry={4} />
         <text
           x={xMid}
-          y={y0 - 10}
+          y={yMid + 14}
           fill="#fff"
           fontSize={12}
           fontWeight="bold"
@@ -123,7 +112,6 @@ export default function VideoChart({ title, viewsByDay }) {
           <YAxis allowDecimals={false} />
           <Tooltip />
           <Line type="monotone" dataKey="views" stroke="#8884d8" dot={false} />
-          {/* Línea roja desde último bloque hasta ahora */}
           {lastBlockPoint && nowPoint && (
             <Line
               type="monotone"
@@ -134,8 +122,7 @@ export default function VideoChart({ title, viewsByDay }) {
               activeDot={false}
             />
           )}
-          {/* Recuadro con hora actual e incremento */}
-          <Customized component={CustomizedNowLabel} />
+          <Customized component={NowLabel} />
         </LineChart>
       </ResponsiveContainer>
     </div>
