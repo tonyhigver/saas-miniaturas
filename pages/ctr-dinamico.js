@@ -14,30 +14,52 @@ import {
 
 // 🔹 Componente para mostrar estadísticas y gráfico interactivo
 function VideoStats({ video, period }) {
-  const viewsTotal = period === "week" ? video.totalViewsWeek : video.totalViewsMonth
+  const viewsTotal =
+    period === "week" ? video.totalViewsWeek : video.totalViewsMonth
 
-  // Transformar registros de Supabase en incrementos de 6h
-  const chartData = []
   const records = video.viewsByDay || []
 
-  let lastViews = 0
-  records.forEach((rec) => {
-    const date = new Date(rec.timestamp)
-    if (isNaN(date)) return
+  // 🔹 Generar todos los intervalos de 6h desde el primer registro hasta ahora
+  let chartData = []
+  if (records.length > 0) {
+    const firstDate = new Date(records[0].timestamp)
+    const lastDate = new Date(records[records.length - 1].timestamp)
 
-    const intervalHour = Math.floor(date.getHours() / 6) * 6
-    const label = `${date.getDate()}/${date.getMonth() + 1} ${intervalHour}:00`
+    // normalizar inicio al múltiplo de 6h más cercano hacia atrás
+    firstDate.setMinutes(0, 0, 0)
+    firstDate.setHours(Math.floor(firstDate.getHours() / 6) * 6)
 
-    const increment = rec.views - lastViews
-    lastViews = rec.views
+    // normalizar fin al múltiplo de 6h hacia adelante
+    const now = new Date()
+    now.setMinutes(0, 0, 0)
+    now.setHours(Math.floor(now.getHours() / 6) * 6)
 
-    chartData.push({
-      interval: label,
-      views: increment > 0 ? increment : 0,
-    })
-  })
+    let pointer = new Date(firstDate)
+    let lastViews = 0
 
-  // Agregar bloque temporal si el último registro no completa las 6h
+    while (pointer <= now) {
+      // buscar el último registro <= al bloque actual
+      const relevant = records.filter(
+        (r) => new Date(r.timestamp) <= pointer
+      )
+      const currentViews =
+        relevant.length > 0 ? relevant[relevant.length - 1].views : lastViews
+
+      const increment = currentViews - lastViews
+      lastViews = currentViews
+
+      chartData.push({
+        interval: `${pointer.getDate()}/${pointer.getMonth() + 1} ${String(
+          pointer.getHours()
+        ).padStart(2, "0")}:00`,
+        views: increment > 0 ? increment : 0,
+      })
+
+      pointer.setHours(pointer.getHours() + 6)
+    }
+  }
+
+  // 🔹 Línea temporal (último bloque incompleto)
   let lastTemporaryLabel = null
   if (records.length > 0) {
     const lastRec = records[records.length - 1]
@@ -45,13 +67,9 @@ function VideoStats({ video, period }) {
     if (!isNaN(lastDate)) {
       const lastIntervalHour = Math.floor(lastDate.getHours() / 6) * 6
       const nextHour = lastIntervalHour + 6
-      lastTemporaryLabel = `${lastDate.getDate()}/${lastDate.getMonth() + 1} ${nextHour}:00`
-
-      chartData.push({
-        interval: lastTemporaryLabel,
-        views: lastRec.views - (records[records.length - 2]?.views || 0),
-        temporary: true,
-      })
+      lastTemporaryLabel = `${lastDate.getDate()}/${
+        lastDate.getMonth() + 1
+      } ${String(nextHour).padStart(2, "0")}:00`
     }
   }
 
@@ -59,7 +77,8 @@ function VideoStats({ video, period }) {
     <div className="p-4 border rounded-lg bg-gray-200 text-black mt-4">
       <h3 className="font-semibold mb-2">{video.title}</h3>
       <p>
-        Visualizaciones {period === "week" ? "última semana" : "último mes"}: {viewsTotal}
+        Visualizaciones {period === "week" ? "última semana" : "último mes"}:{" "}
+        {viewsTotal}
       </p>
 
       <div style={{ width: "100%", height: 300 }} className="mb-4">
@@ -70,6 +89,7 @@ function VideoStats({ video, period }) {
             <YAxis />
             <Tooltip />
             <Line type="monotone" dataKey="views" stroke="#8884d8" />
+
             {lastTemporaryLabel && (
               <ReferenceLine
                 x={lastTemporaryLabel}
@@ -101,7 +121,13 @@ function VideoStats({ video, period }) {
 }
 
 // 🔹 Componente para seleccionar videos y periodo
-function VideoSelector({ videos, selectedVideo, setSelectedVideo, period, setPeriod }) {
+function VideoSelector({
+  videos,
+  selectedVideo,
+  setSelectedVideo,
+  period,
+  setPeriod,
+}) {
   return (
     <div className="mt-6 p-4 border rounded-xl shadow bg-gray-100 text-black">
       <h2 className="text-lg font-bold mb-2">Tus videos recientes</h2>
