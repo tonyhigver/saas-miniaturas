@@ -1,7 +1,7 @@
 // pages/ctr-dinamico.js
 import { useEffect, useState } from "react"
 import { useSession, signIn } from "next-auth/react"
-import VideoChart from "./VideoChart" // asegúrate que la ruta sea correcta
+import VideoChart from "../components/VideoChart" // 🔹 Import correcto desde components
 
 // 🔹 Componente para mostrar estadísticas y gráfico interactivo
 function VideoStats({ video, period }) {
@@ -17,6 +17,7 @@ function VideoStats({ video, period }) {
         Visualizaciones {period === "week" ? "última semana" : "último mes"}: {viewsTotal}
       </p>
 
+      {/* 🔹 Usamos VideoChart para mostrar gráfico con línea roja y recuadro */}
       <VideoChart title="Visualizaciones" viewsByDay={video.viewsByDay || []} />
 
       <div className="mt-4 flex space-x-2">
