@@ -1,4 +1,3 @@
-// pages/api/ctr-dinamico/videos.js
 import { getSession } from "next-auth/react"
 import { createClient } from "@supabase/supabase-js"
 import fetch from "node-fetch"
@@ -12,14 +11,13 @@ export default async function handler(req, res) {
   const session = await getSession({ req })
   if (!session) return res.status(401).json({ error: "No autenticado" })
 
-  const { period } = req.query // "week" o "month"
+  const { period } = req.query
   const today = new Date()
   const startDate = new Date(today)
   if (period === "week") startDate.setDate(today.getDate() - 6)
   else startDate.setDate(today.getDate() - 29)
 
   try {
-    // 🔹 1️⃣ Obtener videos recientes de YouTube
     const accessToken = session.accessToken
     const channelRes = await fetch(
       "https://www.googleapis.com/youtube/v3/channels?part=id,contentDetails&mine=true",
@@ -44,7 +42,6 @@ export default async function handler(req, res) {
       })
     }
 
-    // Filtrar videos subidos en el periodo
     const videosInPeriod = playlistData.items.filter(v => {
       const uploadDate = new Date(v.contentDetails.videoPublishedAt)
       return uploadDate >= startDate && uploadDate <= today
@@ -53,14 +50,12 @@ export default async function handler(req, res) {
     const videoIds = videosInPeriod.map(v => v.contentDetails.videoId).join(",")
     if (!videoIds) return res.status(200).json([])
 
-    // 🔹 2️⃣ Obtener estadísticas de YouTube
     const statsRes = await fetch(
       `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&id=${videoIds}`,
       { headers: { Authorization: `Bearer ${accessToken}` } }
     )
     const statsData = await statsRes.json()
 
-    // 🔹 3️⃣ Obtener métricas históricas desde Supabase
     const { data: metrics, error } = await supabase
       .from("video_metrics")
       .select("*")
@@ -70,7 +65,6 @@ export default async function handler(req, res) {
 
     if (error) console.error("Error leyendo métricas Supabase:", error)
 
-    // 🔹 4️⃣ Mapear métricas por video
     const analyticsMap = {}
     metrics?.forEach(m => {
       if (!analyticsMap[m.video_id]) analyticsMap[m.video_id] = []
@@ -82,7 +76,6 @@ export default async function handler(req, res) {
       })
     })
 
-    // 🔹 5️⃣ Combinar datos y devolver
     const videos = statsData.items.map(v => ({
       id: v.id,
       title: v.snippet.title,
@@ -92,7 +85,6 @@ export default async function handler(req, res) {
       viewsLastMonth: period === "month"
         ? (analyticsMap[v.id]?.slice(-30).reduce((a, b) => a + b.views, 0) || 0)
         : undefined,
-      // 🔹 viewsByDay ahora contiene objetos completos con timestamp
       viewsByDay: analyticsMap[v.id] || []
     }))
 

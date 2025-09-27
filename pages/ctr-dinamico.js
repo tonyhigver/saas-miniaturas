@@ -1,14 +1,11 @@
-// pages/ctr-dinamico.js
 import { useEffect, useState } from "react"
 import { useSession, signIn } from "next-auth/react"
-import VideoChart from "../components/VideoChart" // 🔹 Import correcto desde components
+import VideoChart from "../components/VideoChart"
 
-// 🔹 Componente para mostrar estadísticas y gráfico interactivo
 function VideoStats({ video, period }) {
-  const viewsTotal =
-    video.viewsByDay && video.viewsByDay.length > 0
-      ? video.viewsByDay[video.viewsByDay.length - 1].views
-      : 0
+  const viewsTotal = video.viewsByDay?.length > 0
+    ? video.viewsByDay[video.viewsByDay.length - 1].views
+    : 0
 
   return (
     <div className="p-4 border rounded-lg bg-gray-200 text-black mt-4">
@@ -17,28 +14,11 @@ function VideoStats({ video, period }) {
         Visualizaciones {period === "week" ? "última semana" : "último mes"}: {viewsTotal}
       </p>
 
-      {/* 🔹 Usamos VideoChart para mostrar gráfico con línea roja y recuadro */}
-      <VideoChart title="Visualizaciones" viewsByDay={video.viewsByDay || []} />
-
-      <div className="mt-4 flex space-x-2">
-        <button
-          className="bg-blue-300 px-4 py-2 rounded text-black hover:bg-blue-400"
-          onClick={() => alert("Cambiar miniatura")}
-        >
-          Cambiar miniatura
-        </button>
-        <button
-          className="bg-green-300 px-4 py-2 rounded text-black hover:bg-green-400"
-          onClick={() => alert("Cambiar título")}
-        >
-          Cambiar título
-        </button>
-      </div>
+      <VideoChart title={video.title} viewsByDay={video.viewsByDay} />
     </div>
   )
 }
 
-// 🔹 Componente para seleccionar videos y periodo
 function VideoSelector({ videos, selectedVideo, setSelectedVideo, period, setPeriod }) {
   return (
     <div className="mt-6 p-4 border rounded-xl shadow bg-gray-100 text-black">

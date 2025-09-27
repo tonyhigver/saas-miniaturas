@@ -7,7 +7,7 @@ import {
   CartesianGrid,
   ResponsiveContainer,
   Customized,
-} from "recharts"
+} from 'recharts'
 
 export default function VideoChart({ title, viewsByDay }) {
   const records = viewsByDay || []
@@ -32,11 +32,14 @@ export default function VideoChart({ title, viewsByDay }) {
     const currentBlockStart = new Date(now)
     currentBlockStart.setHours(Math.floor(now.getHours() / 6) * 6, 0, 0, 0)
 
+    // Extender gráfico 3 días más
+    const extendedEnd = new Date(currentBlockStart)
+    extendedEnd.setDate(extendedEnd.getDate() + 3)
+
     let pointer = new Date(firstDate)
     let lastViews = 0
 
-    // Generar bloques pasados
-    while (pointer <= currentBlockStart) {
+    while (pointer <= extendedEnd) {
       const blockStart = new Date(pointer)
       const blockEnd = new Date(pointer)
       blockEnd.setHours(blockEnd.getHours() + 6)
@@ -51,68 +54,44 @@ export default function VideoChart({ title, viewsByDay }) {
       lastViews = endViews
 
       chartData.push({
-        interval: `${blockStart.getDate()}/${blockStart.getMonth() + 1} ${String(blockStart.getHours()).padStart(2, "0")}:00`,
+        interval: `${blockStart.getDate()}/${blockStart.getMonth() + 1} ${String(blockStart.getHours()).padStart(2, '0')}:00`,
         views: increment > 0 ? increment : 0,
-        isRedLine: false,
       })
 
       pointer = blockEnd
     }
 
-    lastBlockPoint = chartData[chartData.length - 1]
+    lastBlockPoint = chartData[chartData.length - 2] // penúltimo bloque real
 
-    // Punto actual para línea roja
-    const nowIncrement = (records[records.length - 1].views || 0) - lastViews
-    nowPoint = {
-      interval: `${now.getDate()}/${now.getMonth() + 1} ${String(now.getHours()).padStart(2, "0")}:00`,
-      views: nowIncrement > 0 ? nowIncrement : 0,
-      isRedLine: true,
-    }
-    chartData.push(nowPoint)
-    lastBlockPoint.isRedLine = true
-
-    // Añadir 3 días futuros
-    for (let i = 1; i <= 12; i++) {
-      const future = new Date(currentBlockStart)
-      future.setHours(future.getHours() + i * 6)
-      chartData.push({
-        interval: `${future.getDate()}/${future.getMonth() + 1} ${String(future.getHours()).padStart(2, "0")}:00`,
-        views: 0,
-        isRedLine: false,
-      })
-    }
+    // Último bloque visible (actual)
+    nowPoint = chartData[chartData.length - 1]
   }
 
-  // Dibujar recuadro en medio de línea roja
   const NowLabel = ({ points }) => {
     if (!points || points.length < 2) return null
-    const redPoints = points.filter(p => chartData[p.index].isRedLine)
-    if (redPoints.length < 2) return null
-
-    const [p1, p2] = redPoints
+    const [p1, p2] = points
     const midX = (p1.x + p2.x) / 2
     const midY = (p1.y + p2.y) / 2
 
     return (
       <g>
-        <rect x={midX - 30} y={midY - 15} width={60} height={20} fill="red" rx={4} ry={4} />
+        <rect x={midX - 30} y={midY - 20} width={60} height={20} fill="red" rx={4} ry={4} />
         <text
           x={midX}
-          y={midY}
+          y={midY - 6}
           fill="#fff"
           fontSize={12}
           fontWeight="bold"
           textAnchor="middle"
-          dominantBaseline="middle"
         >
-          Ahora +{nowPoint.views}
+          Ahora +{nowPoint.views || 0}
         </text>
       </g>
     )
   }
 
   return (
-    <div style={{ width: "100%", height: 400, marginBottom: "2rem" }}>
+    <div style={{ width: '100%', height: 300, marginBottom: '2rem' }}>
       <h3>{title}</h3>
       <p>Visualizaciones totales: {viewsTotal}</p>
       <ResponsiveContainer>
@@ -121,12 +100,7 @@ export default function VideoChart({ title, viewsByDay }) {
           <XAxis dataKey="interval" />
           <YAxis allowDecimals={false} />
           <Tooltip />
-          <Line
-            type="monotone"
-            dataKey="views"
-            stroke="#8884d8"
-            dot={false}
-          />
+          <Line type="monotone" dataKey="views" stroke="#8884d8" dot={false} />
           {lastBlockPoint && nowPoint && (
             <Line
               type="monotone"
