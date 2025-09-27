@@ -1,37 +1,31 @@
-import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, ReferenceLine, Label } from 'recharts'
+import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, Label } from 'recharts'
 
 export default function VideoChart({ title, viewsByDay }) {
   const records = viewsByDay || []
 
-  // 🔹 Total real del último registro
   const viewsTotal = records.length > 0 ? records[records.length - 1].views : 0
 
   let chartData = []
-  let lastTemporaryLabel = null
-  let lastTemporaryValue = 0
 
   if (records.length > 0) {
-    // 🔹 Parsear timestamps
     const parsedRecords = records.map(r => ({
       timestamp: new Date(r.timestamp),
       views: r.views,
     }))
 
-    // 🔹 Primer bloque de 6h
     const firstDate = new Date(parsedRecords[0].timestamp)
     firstDate.setMinutes(0, 0, 0)
     firstDate.setHours(Math.floor(firstDate.getHours() / 6) * 6)
 
     const now = new Date()
     now.setMinutes(0, 0, 0)
-    const currentHourBlock = Math.floor(now.getHours() / 6) * 6
-    now.setHours(currentHourBlock)
+    const currentBlockStart = new Date(now)
+    currentBlockStart.setHours(Math.floor(now.getHours() / 6) * 6, 0, 0, 0)
 
     let pointer = new Date(firstDate)
     let lastViews = 0
 
-    // 🔹 Construir datos por bloques de 6h
-    while (pointer <= now) {
+    while (pointer <= currentBlockStart) {
       const blockStart = new Date(pointer)
       const blockEnd = new Date(pointer)
       blockEnd.setHours(blockEnd.getHours() + 6)
@@ -53,21 +47,16 @@ export default function VideoChart({ title, viewsByDay }) {
       pointer = blockEnd
     }
 
-    // 🔹 Línea roja: incremento respecto al bloque anterior de 6h
-    const lastRec = parsedRecords[parsedRecords.length - 1]
-    const lastBlockStartHour = Math.floor(lastRec.timestamp.getHours() / 6) * 6
-    const lastBlockStart = new Date(lastRec.timestamp)
-    lastBlockStart.setHours(lastBlockStartHour, 0, 0, 0)
+    // 🔹 Agregar punto "ahora" con incremento respecto al bloque anterior
+    const lastBlock = parsedRecords.filter(r => r.timestamp <= currentBlockStart).pop()
+    const lastBlockViews = lastBlock ? lastBlock.views : 0
+    const nowIncrement = (records[records.length - 1].views || 0) - lastBlockViews
 
-    const startRec = parsedRecords.filter(r => r.timestamp <= lastBlockStart).pop()
-    const startViews = startRec ? startRec.views : 0
-
-    lastTemporaryValue = lastRec.views - startViews
-    if (lastTemporaryValue < 0) lastTemporaryValue = 0
-
-    // 🔹 Línea roja final: hora actual
-    const nowDate = new Date()
-    lastTemporaryLabel = `${nowDate.getDate()}/${nowDate.getMonth() + 1} ${String(nowDate.getHours()).padStart(2, '0')}:00`
+    chartData.push({
+      interval: `${now.getDate()}/${now.getMonth() + 1} ${String(now.getHours()).padStart(2, '0')}:00`,
+      views: nowIncrement > 0 ? nowIncrement : 0,
+      isNow: true, // marcar este punto para mostrar etiqueta roja
+    })
   }
 
   return (
@@ -82,21 +71,30 @@ export default function VideoChart({ title, viewsByDay }) {
           <Tooltip />
           <Line type="monotone" dataKey="views" stroke="#8884d8" />
 
-          {lastTemporaryLabel && (
-            <ReferenceLine
-              x={lastTemporaryLabel}
-              stroke="red"
-              strokeDasharray="3 3"
-              label={{
-                value: `${lastTemporaryLabel}\n+${lastTemporaryValue}`,
-                position: 'insideTop',
-                fill: 'red',
-                fontSize: 12,
-                fontWeight: 'bold',
-                textAnchor: 'middle',
-              }}
-            />
-          )}
+          {/* Línea roja "ahora" */}
+          <Line
+            type="monotone"
+            dataKey="views"
+            stroke="red"
+            dot={false}
+            activeDot={false}
+            legendType="none"
+            data={chartData.filter(d => d.isNow)}
+          >
+            {chartData.map((entry, index) =>
+              entry.isNow ? (
+                <Label
+                  key={index}
+                  value={`${entry.interval} +${entry.views}`}
+                  position="top"
+                  fill="red"
+                  fontSize={12}
+                  fontWeight="bold"
+                  dy={-10}
+                />
+              ) : null
+            )}
+          </Line>
         </LineChart>
       </ResponsiveContainer>
     </div>
