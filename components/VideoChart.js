@@ -1,4 +1,13 @@
-import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, Label } from 'recharts'
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  ResponsiveContainer,
+  Customized,
+} from 'recharts'
 
 export default function VideoChart({ title, viewsByDay }) {
   const records = viewsByDay || []
@@ -7,6 +16,8 @@ export default function VideoChart({ title, viewsByDay }) {
   const viewsTotal = records.length > 0 ? records[records.length - 1].views : 0
 
   let chartData = []
+  let lastBlockPoint = null
+  let nowPoint = null
 
   if (records.length > 0) {
     const parsedRecords = records.map(r => ({
@@ -48,19 +59,57 @@ export default function VideoChart({ title, viewsByDay }) {
       pointer = blockEnd
     }
 
-    // 🔹 Línea roja desde último bloque hasta ahora
-    const lastBlock = parsedRecords.filter(r => r.timestamp <= currentBlockStart).pop()
-    const lastBlockViews = lastBlock ? lastBlock.views : 0
-    const nowIncrement = (records[records.length - 1].views || 0) - lastBlockViews
+    // 🔹 Último bloque
+    lastBlockPoint = chartData[chartData.length - 1]
 
-    const nowPoint = {
+    // 🔹 Ahora
+    const nowIncrement = (records[records.length - 1].views || 0) - lastViews
+    nowPoint = {
       interval: `${now.getDate()}/${now.getMonth() + 1} ${String(now.getHours()).padStart(2, '0')}:00`,
       views: nowIncrement > 0 ? nowIncrement : 0,
-      isNow: true,
-      label: `Ahora\n+${nowIncrement > 0 ? nowIncrement : 0}`,
     }
-
     chartData.push(nowPoint)
+  }
+
+  // 🔹 Componente para dibujar el recuadro en medio de la línea roja
+  const CustomizedNowLabel = (props) => {
+    if (!lastBlockPoint || !nowPoint) return null
+
+    const { width, height, xAxisMap, yAxisMap, offset } = props
+    const xAxis = xAxisMap[0]
+    const yAxis = yAxisMap[0]
+
+    // Posición del recuadro en coordenadas del canvas
+    const x0 = xAxis.scale(lastBlockPoint.interval)
+    const x1 = xAxis.scale(nowPoint.interval)
+    const y0 = yAxis.scale(nowPoint.views)
+
+    const xMid = x0 + (x1 - x0) / 2
+
+    return (
+      <g>
+        <rect
+          x={xMid - 30}
+          y={y0 - 25}
+          width={60}
+          height={20}
+          fill="red"
+          opacity={0.8}
+          rx={4}
+          ry={4}
+        />
+        <text
+          x={xMid}
+          y={y0 - 10}
+          fill="#fff"
+          fontSize={12}
+          fontWeight="bold"
+          textAnchor="middle"
+        >
+          Ahora +{nowPoint.views}
+        </text>
+      </g>
+    )
   }
 
   return (
@@ -73,31 +122,20 @@ export default function VideoChart({ title, viewsByDay }) {
           <XAxis dataKey="interval" />
           <YAxis allowDecimals={false} />
           <Tooltip />
-          <Line type="monotone" dataKey="views" stroke="#8884d8" />
-
-          {/* 🔹 Línea roja final con etiqueta en medio */}
-          {chartData.map((entry, index) =>
-            entry.isNow ? (
-              <Line
-                key={index}
-                type="monotone"
-                dataKey="views"
-                data={[chartData[chartData.length - 2], entry]} // línea desde penúltimo bloque hasta ahora
-                stroke="red"
-                dot={false}
-                activeDot={false}
-              >
-                <Label
-                  value={`Ahora +${entry.views}`}
-                  position="insideBottom"
-                  fill="red"
-                  fontWeight="bold"
-                  fontSize={12}
-                  dy={10}
-                />
-              </Line>
-            ) : null
+          <Line type="monotone" dataKey="views" stroke="#8884d8" dot={false} />
+          {/* Línea roja desde último bloque hasta ahora */}
+          {lastBlockPoint && nowPoint && (
+            <Line
+              type="monotone"
+              dataKey="views"
+              data={[lastBlockPoint, nowPoint]}
+              stroke="red"
+              dot={false}
+              activeDot={false}
+            />
           )}
+          {/* Recuadro con hora actual e incremento */}
+          <Customized component={CustomizedNowLabel} />
         </LineChart>
       </ResponsiveContainer>
     </div>
