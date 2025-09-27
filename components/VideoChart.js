@@ -3,6 +3,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContai
 export default function VideoChart({ title, viewsByDay }) {
   const records = viewsByDay || []
 
+  // 🔹 Total real del último registro
   const viewsTotal = records.length > 0 ? records[records.length - 1].views : 0
 
   let chartData = []
@@ -47,16 +48,19 @@ export default function VideoChart({ title, viewsByDay }) {
       pointer = blockEnd
     }
 
-    // 🔹 Agregar punto "ahora" con incremento respecto al bloque anterior
+    // 🔹 Línea roja desde último bloque hasta ahora
     const lastBlock = parsedRecords.filter(r => r.timestamp <= currentBlockStart).pop()
     const lastBlockViews = lastBlock ? lastBlock.views : 0
     const nowIncrement = (records[records.length - 1].views || 0) - lastBlockViews
 
-    chartData.push({
+    const nowPoint = {
       interval: `${now.getDate()}/${now.getMonth() + 1} ${String(now.getHours()).padStart(2, '0')}:00`,
       views: nowIncrement > 0 ? nowIncrement : 0,
-      isNow: true, // marcar este punto para mostrar etiqueta roja
-    })
+      isNow: true,
+      label: `Ahora\n+${nowIncrement > 0 ? nowIncrement : 0}`,
+    }
+
+    chartData.push(nowPoint)
   }
 
   return (
@@ -71,30 +75,29 @@ export default function VideoChart({ title, viewsByDay }) {
           <Tooltip />
           <Line type="monotone" dataKey="views" stroke="#8884d8" />
 
-          {/* Línea roja "ahora" */}
-          <Line
-            type="monotone"
-            dataKey="views"
-            stroke="red"
-            dot={false}
-            activeDot={false}
-            legendType="none"
-            data={chartData.filter(d => d.isNow)}
-          >
-            {chartData.map((entry, index) =>
-              entry.isNow ? (
+          {/* 🔹 Línea roja final con etiqueta en medio */}
+          {chartData.map((entry, index) =>
+            entry.isNow ? (
+              <Line
+                key={index}
+                type="monotone"
+                dataKey="views"
+                data={[chartData[chartData.length - 2], entry]} // línea desde penúltimo bloque hasta ahora
+                stroke="red"
+                dot={false}
+                activeDot={false}
+              >
                 <Label
-                  key={index}
-                  value={`${entry.interval} +${entry.views}`}
-                  position="top"
+                  value={`Ahora +${entry.views}`}
+                  position="insideBottom"
                   fill="red"
-                  fontSize={12}
                   fontWeight="bold"
-                  dy={-10}
+                  fontSize={12}
+                  dy={10}
                 />
-              ) : null
-            )}
-          </Line>
+              </Line>
+            ) : null
+          )}
         </LineChart>
       </ResponsiveContainer>
     </div>
