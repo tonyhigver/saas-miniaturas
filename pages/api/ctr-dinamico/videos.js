@@ -18,9 +18,6 @@ export default async function handler(req, res) {
   if (period === "week") startDate.setDate(today.getDate() - 6)
   else startDate.setDate(today.getDate() - 29)
 
-  const startDateStr = startDate.toISOString().split("T")[0]
-  const endDateStr = today.toISOString().split("T")[0]
-
   try {
     // 🔹 1️⃣ Obtener videos recientes de YouTube
     const accessToken = session.accessToken
@@ -54,9 +51,7 @@ export default async function handler(req, res) {
     })
 
     const videoIds = videosInPeriod.map(v => v.contentDetails.videoId).join(",")
-    if (!videoIds) {
-      return res.status(200).json([]) // No hay videos en el periodo
-    }
+    if (!videoIds) return res.status(200).json([]) // No hay videos en el periodo
 
     // 🔹 2️⃣ Obtener estadísticas de YouTube
     const statsRes = await fetch(
@@ -97,7 +92,8 @@ export default async function handler(req, res) {
       viewsLastMonth: period === "month"
         ? (analyticsMap[v.id]?.slice(-30).reduce((a, b) => a + b.views, 0) || 0)
         : undefined,
-      viewsByDay: analyticsMap[v.id]?.map(d => d.views) || Array.from({ length: period === "week" ? 7 : 30 }, () => 0)
+      // 🔥 Aquí está la corrección: viewsByDay contiene objetos completos
+      viewsByDay: analyticsMap[v.id] || []
     }))
 
     res.status(200).json(videos)
