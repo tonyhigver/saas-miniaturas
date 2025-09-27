@@ -1,81 +1,14 @@
 // pages/ctr-dinamico.js
 import { useEffect, useState } from "react"
 import { useSession, signIn } from "next-auth/react"
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  ReferenceLine,
-} from "recharts"
+import VideoChart from "./VideoChart" // asegúrate que la ruta sea correcta
 
 // 🔹 Componente para mostrar estadísticas y gráfico interactivo
 function VideoStats({ video, period }) {
-  const records = video.viewsByDay || []
-
-  // 🔹 Total real del último registro
   const viewsTotal =
-    records.length > 0
-      ? records[records.length - 1].views
+    video.viewsByDay && video.viewsByDay.length > 0
+      ? video.viewsByDay[video.viewsByDay.length - 1].views
       : 0
-
-  let chartData = []
-  let lastTemporaryLabel = null
-  let lastTemporaryValue = null
-
-  if (records.length > 0) {
-    const parsedRecords = records.map((r) => ({
-      timestamp: new Date(r.timestamp),
-      views: r.views,
-    }))
-
-    const firstDate = new Date(parsedRecords[0].timestamp)
-    firstDate.setMinutes(0, 0, 0)
-    firstDate.setHours(Math.floor(firstDate.getHours() / 6) * 6)
-
-    const now = new Date()
-    now.setMinutes(0, 0, 0)
-    now.setHours(Math.floor(now.getHours() / 6) * 6)
-
-    let pointer = new Date(firstDate)
-    let lastViews = 0
-
-    while (pointer <= now) {
-      const blockStart = new Date(pointer)
-      const blockEnd = new Date(pointer)
-      blockEnd.setHours(blockEnd.getHours() + 6)
-
-      const startRec = parsedRecords.filter(r => r.timestamp <= blockStart).pop()
-      const startViews = startRec ? startRec.views : lastViews
-
-      const endRec = parsedRecords.filter(r => r.timestamp <= blockEnd).pop()
-      const endViews = endRec ? endRec.views : startViews
-
-      const increment = endViews - startViews
-      lastViews = endViews
-
-      chartData.push({
-        interval: `${blockStart.getDate()}/${blockStart.getMonth() + 1} ${String(blockStart.getHours()).padStart(2, "0")}:00`,
-        views: increment > 0 ? increment : 0,
-      })
-
-      pointer = blockEnd
-    }
-
-    // 🔹 Línea roja temporal: último incremento desde hace 6h
-    const lastRec = parsedRecords[parsedRecords.length - 1]
-    const lastBlockStart = new Date(lastRec.timestamp)
-    lastBlockStart.setHours(Math.floor(lastRec.timestamp.getHours() / 6) * 6, 0, 0, 0)
-
-    const startRec = parsedRecords.filter(r => r.timestamp <= lastBlockStart).pop()
-    const startViews = startRec ? startRec.views : 0
-
-    lastTemporaryValue = lastRec.views - startViews
-    lastTemporaryLabel = `${lastRec.timestamp.getDate()}/${lastRec.timestamp.getMonth() + 1} ${String(lastRec.timestamp.getHours()).padStart(2, "0")}:00`
-  }
 
   return (
     <div className="p-4 border rounded-lg bg-gray-200 text-black mt-4">
@@ -84,30 +17,7 @@ function VideoStats({ video, period }) {
         Visualizaciones {period === "week" ? "última semana" : "último mes"}: {viewsTotal}
       </p>
 
-      <div style={{ width: "100%", height: 300 }} className="mb-4">
-        <ResponsiveContainer>
-          <LineChart data={chartData}>
-            <CartesianGrid stroke="#ccc" strokeDasharray="3 3" />
-            <XAxis dataKey="interval" />
-            <YAxis allowDecimals={false} />
-            <Tooltip />
-            <Line type="monotone" dataKey="views" stroke="#8884d8" />
-
-            {lastTemporaryLabel && (
-              <ReferenceLine
-                x={lastTemporaryLabel}
-                stroke="red"
-                strokeDasharray="3 3"
-                label={{
-                  value: `+${lastTemporaryValue}`,
-                  position: "top",
-                  fill: "red",
-                }}
-              />
-            )}
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
+      <VideoChart title="Visualizaciones" viewsByDay={video.viewsByDay || []} />
 
       <div className="mt-4 flex space-x-2">
         <button
