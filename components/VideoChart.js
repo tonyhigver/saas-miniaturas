@@ -12,6 +12,7 @@ import {
 export default function VideoChart({ title, viewsByDay }) {
   const records = viewsByDay || []
 
+  // Total real del último registro
   const viewsTotal = records.length > 0 ? records[records.length - 1].views : 0
 
   let chartData = []
@@ -36,6 +37,7 @@ export default function VideoChart({ title, viewsByDay }) {
     let pointer = new Date(firstDate)
     let lastViews = 0
 
+    // Construir datos por bloques de 6 horas
     while (pointer <= currentBlockStart) {
       const blockStart = new Date(pointer)
       const blockEnd = new Date(pointer)
@@ -68,21 +70,21 @@ export default function VideoChart({ title, viewsByDay }) {
     chartData.push(nowPoint)
   }
 
-  // 🔹 Customized para dibujar el recuadro en medio de la línea roja
+  // 🔹 Customized para dibujar recuadro en medio de la línea roja
   const NowLabel = (props) => {
-    const { chartWidth, chartHeight } = props
+    const { xAxisMap, yAxisMap, width, height, offset } = props
 
     if (!lastBlockPoint || !nowPoint) return null
 
-    // Usaremos índices para calcular la posición horizontal
+    // Índices para calcular posición X
     const lastIndex = chartData.length - 2
     const nowIndex = chartData.length - 1
-    const xStep = chartWidth / (chartData.length - 1)
+    const xStep = width / (chartData.length - 1)
     const xMid = xStep * lastIndex + xStep / 2
 
-    // Para Y usamos una escala simple proporcional al valor máximo
+    // Escala Y proporcional al valor máximo
     const maxViews = Math.max(...chartData.map(d => d.views))
-    const yMid = chartHeight - (nowPoint.views / (maxViews || 1)) * chartHeight - 30
+    const yMid = height - (nowPoint.views / (maxViews || 1)) * height - 20
 
     return (
       <g>
@@ -112,6 +114,7 @@ export default function VideoChart({ title, viewsByDay }) {
           <YAxis allowDecimals={false} />
           <Tooltip />
           <Line type="monotone" dataKey="views" stroke="#8884d8" dot={false} />
+          {/* Línea roja desde último bloque hasta ahora */}
           {lastBlockPoint && nowPoint && (
             <Line
               type="monotone"
