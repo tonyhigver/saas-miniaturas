@@ -14,7 +14,6 @@ export default function VideoChart({ title, viewsByDay }) {
   const viewsTotal = records.length > 0 ? records[records.length - 1].views : 0
 
   let chartData = []
-
   let lastBlockPoint = null
   let nowPoint = null
 
@@ -24,7 +23,6 @@ export default function VideoChart({ title, viewsByDay }) {
       views: r.views,
     }))
 
-    // Primer bloque 6h
     const firstDate = new Date(parsedRecords[0].timestamp)
     firstDate.setMinutes(0, 0, 0)
     firstDate.setHours(Math.floor(firstDate.getHours() / 6) * 6)
@@ -54,7 +52,6 @@ export default function VideoChart({ title, viewsByDay }) {
       chartData.push({
         interval: `${blockStart.getDate()}/${blockStart.getMonth() + 1} ${String(blockStart.getHours()).padStart(2, '0')}:00`,
         views: increment > 0 ? increment : 0,
-        isNowLine: false, // azul por defecto
       })
 
       pointer = blockEnd
@@ -66,37 +63,26 @@ export default function VideoChart({ title, viewsByDay }) {
     nowPoint = {
       interval: `${now.getDate()}/${now.getMonth() + 1} ${String(now.getHours()).padStart(2, '0')}:00`,
       views: nowIncrement > 0 ? nowIncrement : 0,
-      isNowLine: true, // roja
     }
-
     chartData.push(nowPoint)
-    // Marcar el penúltimo punto como parte de la línea roja
-    lastBlockPoint.isNowLine = true
   }
 
-  // Customizado para dibujar el recuadro en el medio de la línea roja
-  const NowLabel = (props) => {
-    const { points, width, height } = props
+  const NowLabel = ({ points }) => {
     if (!points || points.length < 2) return null
-
-    const redPoints = points.filter(p => chartData[p.index].isNowLine)
-    if (redPoints.length < 2) return null
-
-    const [p1, p2] = redPoints
+    const [p1, p2] = points
     const midX = (p1.x + p2.x) / 2
     const midY = (p1.y + p2.y) / 2
 
     return (
       <g>
-        <rect x={midX - 30} y={midY - 15} width={60} height={20} fill="red" rx={4} ry={4} />
+        <rect x={midX - 30} y={midY - 20} width={60} height={20} fill="red" rx={4} ry={4} />
         <text
           x={midX}
-          y={midY}
+          y={midY - 6}
           fill="#fff"
           fontSize={12}
           fontWeight="bold"
           textAnchor="middle"
-          dominantBaseline="middle"
         >
           Ahora +{nowPoint.views}
         </text>
@@ -114,17 +100,19 @@ export default function VideoChart({ title, viewsByDay }) {
           <XAxis dataKey="interval" />
           <YAxis allowDecimals={false} />
           <Tooltip />
-          <Line
-            type="monotone"
-            dataKey="views"
-            stroke="#8884d8"
-            dot={false}
-            strokeWidth={2}
-            // cambiar color a rojo solo si isNowLine
-            strokeOpacity={1}
-            stroke={(point) => point.isNowLine ? 'red' : '#8884d8'}
-          />
-          <Customized component={NowLabel} />
+          <Line type="monotone" dataKey="views" stroke="#8884d8" dot={false} />
+          {lastBlockPoint && nowPoint && (
+            <Line
+              type="monotone"
+              dataKey="views"
+              data={[lastBlockPoint, nowPoint]}
+              stroke="red"
+              dot={false}
+              activeDot={false}
+            >
+              <Customized component={NowLabel} />
+            </Line>
+          )}
         </LineChart>
       </ResponsiveContainer>
     </div>
