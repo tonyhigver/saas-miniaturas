@@ -36,11 +36,9 @@ export default function VideoChart({ title, viewsByDay }) {
       const blockEnd = new Date(pointer)
       blockEnd.setHours(blockEnd.getHours() + 6)
 
-      // Último registro antes o igual al inicio del bloque
       const startRec = parsedRecords.filter(r => r.timestamp <= blockStart).pop()
       const startViews = startRec ? startRec.views : lastViews
 
-      // Último registro antes o igual al final del bloque
       const endRec = parsedRecords.filter(r => r.timestamp <= blockEnd).pop()
       const endViews = endRec ? endRec.views : startViews
 
@@ -68,7 +66,7 @@ export default function VideoChart({ title, viewsByDay }) {
     lastTemporaryValue = lastRec.views - startViews
     if (lastTemporaryValue < 0) lastTemporaryValue = 0
 
-    // Mostrar línea roja al final del gráfico, hora actual
+    // Mostrar línea roja al final del gráfico con hora actual
     const nowDate = new Date()
     lastTemporaryLabel = `${nowDate.getDate()}/${nowDate.getMonth() + 1} ${String(nowDate.getHours()).padStart(2, '0')}:00`
   }
@@ -91,8 +89,8 @@ export default function VideoChart({ title, viewsByDay }) {
               stroke="red"
               strokeDasharray="3 3"
               label={{
-                value: `+${lastTemporaryValue}`,
-                position: 'top',
+                value: `Hora: ${new Date().getHours()}:00 | +${lastTemporaryValue}`,
+                position: 'insideBottom',
                 fill: 'red',
               }}
             />
