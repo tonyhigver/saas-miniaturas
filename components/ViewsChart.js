@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react"
 import * as d3 from "d3"
-import { supabase } from "@/lib/supabaseClient"
+// 🔹 Cambiado a ruta relativa
+import { supabase } from "../lib/supabaseClient"
 
 export default function ViewsChart({ userId, videoId }) {
   const svgRef = useRef()
@@ -57,9 +58,9 @@ export default function ViewsChart({ userId, videoId }) {
     if (data.length === 0) return
 
     const svg = d3.select(svgRef.current)
-    const width = 600
-    const height = 300
-    const margin = { top: 20, right: 30, bottom: 50, left: 50 }
+    const width = 800
+    const height = 400
+    const margin = { top: 20, right: 30, bottom: 50, left: 60 }
 
     svg.selectAll("*").remove()
     svg.attr("viewBox", [0, 0, width, height])
@@ -76,18 +77,16 @@ export default function ViewsChart({ userId, videoId }) {
       .range([height - margin.bottom, margin.top])
 
     // Ejes
-    const xAxis = d3.axisBottom(x)
-      .ticks(d3.timeHour.every(6))
-      .tickFormat(d3.timeFormat("%d %Hh"))
-    const yAxis = d3.axisLeft(y)
-
     svg.append("g")
       .attr("transform", `translate(0,${height - margin.bottom})`)
-      .call(xAxis)
+      .call(d3.axisBottom(x)
+        .ticks(d3.timeHour.every(6))
+        .tickFormat(d3.timeFormat("%d %Hh"))
+      )
 
     svg.append("g")
       .attr("transform", `translate(${margin.left},0)`)
-      .call(yAxis)
+      .call(d3.axisLeft(y))
 
     // Línea
     const line = d3.line()
@@ -107,9 +106,9 @@ export default function ViewsChart({ userId, videoId }) {
       .join("circle")
       .attr("cx", d => x(d.time))
       .attr("cy", d => y(d.viewsDiff))
-      .attr("r", 3)
+      .attr("r", 4)
       .attr("fill", "steelblue")
   }, [data])
 
-  return <svg ref={svgRef} className="w-full h-[300px]" />
+  return <svg ref={svgRef} className="w-full h-[400px]" />
 }
