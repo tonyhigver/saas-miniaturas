@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react"
 import { useSession, signIn } from "next-auth/react"
-import ViewsChart from "@/components/ViewsChart"
+// 🔹 Cambiado a ruta relativa
+import ViewsChart from "../components/ViewsChart"
 
 export default function CtrDinamico() {
   const { data: session } = useSession()
