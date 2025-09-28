@@ -1,54 +1,230 @@
-"use client"
-
+// pages/ctr-dinamico.js
 import { useEffect, useState } from "react"
 import { useSession, signIn } from "next-auth/react"
-// 🔹 Ruta relativa a ViewsChart
-import ViewsChart from "../components/ViewsChart"
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  ReferenceLine,
+} from "recharts"
 
-// Placeholder para miniaturas, puedes reemplazar con tu componente real
-function ThumbnailsComponent() {
+// 🔹 Componente para mostrar estadísticas y gráfico interactivo
+function VideoStats({ video, period }) {
+  const viewsTotal =
+    period === "week" ? video.viewsLastWeek : video.viewsLastMonth
+
+  const records = video.viewsByDay || []
+
+  let chartData = []
+  let lastTemporaryLabel = null
+  let lastTemporaryValue = null
+
+  if (records.length > 0) {
+    // Convertir registros a Date + views
+    const parsedRecords = records.map((r) => ({
+      timestamp: new Date(r.timestamp),
+      views: r.views,
+    }))
+
+    const firstDate = new Date(parsedRecords[0].timestamp)
+    firstDate.setMinutes(0, 0, 0)
+    firstDate.setHours(Math.floor(firstDate.getHours() / 6) * 6)
+
+    const now = new Date()
+    now.setMinutes(0, 0, 0)
+    now.setHours(Math.floor(now.getHours() / 6) * 6)
+
+    let pointer = new Date(firstDate)
+
+    while (pointer <= now) {
+      const blockStart = new Date(pointer)
+      const blockEnd = new Date(pointer)
+      blockEnd.setHours(blockEnd.getHours() + 6)
+
+      // último registro antes o igual al inicio
+      const startRec = [...parsedRecords]
+        .filter((r) => r.timestamp <= blockStart)
+        .pop()
+      const startViews = startRec ? startRec.views : 0
+
+      // último registro antes o igual al final
+      const endRec = [...parsedRecords]
+        .filter((r) => r.timestamp <= blockEnd)
+        .pop()
+      const endViews = endRec ? endRec.views : startViews
+
+      const increment = endViews - startViews
+
+      chartData.push({
+        interval: `${blockStart.getDate()}/${
+          blockStart.getMonth() + 1
+        } ${String(blockStart.getHours()).padStart(2, "0")}:00`,
+        views: increment > 0 ? increment : 0,
+      })
+
+      pointer = blockEnd
+    }
+
+    // 🔹 Línea temporal en el bloque actual incompleto
+    const lastRec = parsedRecords[parsedRecords.length - 1]
+    const lastDate = lastRec.timestamp
+    const lastIntervalHour = Math.floor(lastDate.getHours() / 6) * 6
+    const nextHour = lastIntervalHour + 6
+
+    const lastIntervalStart = new Date(lastDate)
+    lastIntervalStart.setHours(lastIntervalHour, 0, 0, 0)
+
+    const startRec = [...parsedRecords]
+      .filter((r) => r.timestamp <= lastIntervalStart)
+      .pop()
+    const startViews = startRec ? startRec.views : 0
+    lastTemporaryValue = lastRec.views - startViews
+
+    lastTemporaryLabel = `${lastDate.getDate()}/${
+      lastDate.getMonth() + 1
+    } ${String(nextHour).padStart(2, "0")}:00`
+  }
+
   return (
-    <div className="p-8">
-      <h2 className="text-xl font-bold mb-4">Crear miniaturas</h2>
-      <p>Aquí iría tu UI para cambiar miniaturas o títulos.</p>
+    <div className="p-4 border rounded-lg bg-gray-200 text-black mt-4">
+      <h3 className="font-semibold mb-2">{video.title}</h3>
+      <p>
+        Visualizaciones {period === "week" ? "última semana" : "último mes"}:{" "}
+        {viewsTotal}
+      </p>
+
+      <div style={{ width: "100%", height: 300 }} className="mb-4">
+        <ResponsiveContainer>
+          <LineChart data={chartData}>
+            <CartesianGrid stroke="#ccc" strokeDasharray="3 3" />
+            <XAxis dataKey="interval" />
+            <YAxis allowDecimals={false} />
+            <Tooltip />
+            <Line type="monotone" dataKey="views" stroke="#8884d8" />
+
+            {lastTemporaryLabel && (
+              <ReferenceLine
+                x={lastTemporaryLabel}
+                stroke="red"
+                strokeDasharray="3 3"
+                label={{
+                  value: `+${lastTemporaryValue}`,
+                  position: "top",
+                  fill: "red",
+                }}
+              />
+            )}
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+
+      <div className="mt-4 flex space-x-2">
+        <button
+          className="bg-blue-300 px-4 py-2 rounded text-black hover:bg-blue-400"
+          onClick={() => alert("Cambiar miniatura")}
+        >
+          Cambiar miniatura
+        </button>
+        <button
+          className="bg-green-300 px-4 py-2 rounded text-black hover:bg-green-400"
+          onClick={() => alert("Cambiar título")}
+        >
+          Cambiar título
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// 🔹 Componente para seleccionar videos y periodo
+function VideoSelector({
+  videos,
+  selectedVideo,
+  setSelectedVideo,
+  period,
+  setPeriod,
+}) {
+  return (
+    <div className="mt-6 p-4 border rounded-xl shadow bg-gray-100 text-black">
+      <h2 className="text-lg font-bold mb-2">Tus videos recientes</h2>
+
+      <label className="block mb-2">
+        Mostrar videos de:
+        <select
+          className="ml-2 p-1 rounded text-black"
+          value={period}
+          onChange={(e) => setPeriod(e.target.value)}
+        >
+          <option value="week">Última semana</option>
+          <option value="month">Último mes</option>
+        </select>
+      </label>
+
+      <select
+        className="w-full p-2 border rounded mb-4 text-black"
+        value={selectedVideo?.id || ""}
+        onChange={(e) =>
+          setSelectedVideo(videos.find((v) => v.id === e.target.value))
+        }
+      >
+        <option value="">Selecciona un video</option>
+        {videos.map((video) => (
+          <option key={video.id} value={video.id}>
+            {video.title}
+          </option>
+        ))}
+      </select>
+
+      {selectedVideo && <VideoStats video={selectedVideo} period={period} />}
     </div>
   )
 }
 
 export default function CtrDinamico() {
   const { data: session } = useSession()
+  const [loading, setLoading] = useState(true)
   const [videos, setVideos] = useState([])
   const [selectedVideo, setSelectedVideo] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [mode, setMode] = useState(null) // null → pantalla inicial
+  const [period, setPeriod] = useState("week")
 
-  // 🔹 Cargar videos
   useEffect(() => {
     if (!session) return
     let isMounted = true
 
     async function fetchVideos() {
       try {
-        const res = await fetch(`/api/ctr-dinamico/videos`)
+        const res = await fetch(`/api/ctr-dinamico/videos?period=${period}`)
         const data = await res.json()
         if (!isMounted) return
 
         setVideos(data)
         if (!selectedVideo && data.length > 0) setSelectedVideo(data[0])
       } catch (err) {
-        console.error(err)
+        console.error("Error fetching videos:", err)
       } finally {
         if (isMounted) setLoading(false)
       }
     }
 
     fetchVideos()
-    return () => { isMounted = false }
-  }, [session])
 
-  if (!session) {
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") fetchVideos()
+    }
+    document.addEventListener("visibilitychange", handleVisibility)
+    return () => {
+      isMounted = false
+      document.removeEventListener("visibilitychange", handleVisibility)
+    }
+  }, [session, period])
+
+  if (!session)
     return (
-      <div className="p-8">
+      <div className="p-8 text-black">
         <p>No estás autenticado.</p>
         <button
           className="bg-blue-300 px-4 py-2 rounded"
@@ -58,61 +234,20 @@ export default function CtrDinamico() {
         </button>
       </div>
     )
-  }
 
-  if (loading) return <p className="p-4">Cargando...</p>
+  if (loading) return <p className="p-4 text-black">Cargando...</p>
 
-  // 🔹 Pantalla inicial: elegir modo
-  if (!mode) {
-    return (
-      <div className="p-8 text-center">
-        <h1 className="text-2xl font-bold mb-6">Selecciona una opción</h1>
-        <div className="flex justify-center gap-4">
-          <button
-            className="bg-blue-300 px-6 py-3 rounded hover:bg-blue-400"
-            onClick={() => setMode("charts")}
-          >
-            Ver gráficos
-          </button>
-          <button
-            className="bg-green-300 px-6 py-3 rounded hover:bg-green-400"
-            onClick={() => setMode("thumbnails")}
-          >
-            Crear miniaturas
-          </button>
-        </div>
-      </div>
-    )
-  }
+  return (
+    <div className="p-8 max-w-3xl mx-auto text-black">
+      <h1 className="text-2xl font-bold mb-4">CTR Dinámico</h1>
 
-  // 🔹 Modo miniaturas
-  if (mode === "thumbnails") return <ThumbnailsComponent />
-
-  // 🔹 Modo charts
-  if (mode === "charts") {
-    return (
-      <div className="p-8 max-w-3xl mx-auto">
-        <h1 className="text-2xl font-bold mb-4">CTR Dinámico</h1>
-
-        <div className="mb-4">
-          <label className="mr-2">Selecciona un video:</label>
-          <select
-            value={selectedVideo?.id || ""}
-            onChange={e => setSelectedVideo(videos.find(v => v.id === e.target.value))}
-            className="border p-2 rounded"
-          >
-            {videos.map(v => (
-              <option key={v.id} value={v.id}>{v.title}</option>
-            ))}
-          </select>
-        </div>
-
-        {selectedVideo && (
-          <ViewsChart userId={session.user.id} videoId={selectedVideo.id} />
-        )}
-      </div>
-    )
-  }
-
-  return null
+      <VideoSelector
+        videos={videos}
+        selectedVideo={selectedVideo}
+        setSelectedVideo={setSelectedVideo}
+        period={period}
+        setPeriod={setPeriod}
+      />
+    </div>
+  )
 }
