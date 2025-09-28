@@ -4,13 +4,13 @@ import { useEffect, useState } from "react"
 import { useSession, signIn } from "next-auth/react"
 import ViewsChart from "../components/ViewsChart"
 
-// Componente placeholder para crear miniaturas
+// Componente miniaturas debajo del gráfico
 function ThumbnailsComponent() {
   return (
-    <div className="mt-4 p-4 border rounded-lg bg-gray-100 text-black">
+    <div className="mt-4 p-4 border border-[#00ffff] rounded-lg text-[#00ffff] text-center">
       <h2 className="text-xl font-bold mb-2">Crear nueva miniatura</h2>
       <button
-        className="bg-green-300 px-4 py-2 rounded hover:bg-green-400"
+        className="border border-[#00ffff] px-4 py-2 rounded hover:bg-[#00ffff] hover:text-black transition"
         onClick={() => alert("Aquí iría la funcionalidad de crear miniatura")}
       >
         Cambiar miniatura
@@ -51,10 +51,10 @@ export default function CtrDinamico() {
 
   if (!session) {
     return (
-      <div className="p-8">
-        <p>No estás autenticado.</p>
+      <div className="p-8 text-center">
+        <p className="text-[#00ffff] mb-4 font-bold">No estás autenticado.</p>
         <button
-          className="bg-blue-300 px-4 py-2 rounded"
+          className="border border-[#00ffff] px-4 py-2 rounded hover:bg-[#00ffff] hover:text-black"
           onClick={() => signIn("google")}
         >
           Iniciar sesión con Google
@@ -63,19 +63,19 @@ export default function CtrDinamico() {
     )
   }
 
-  if (loading) return <p className="p-4">Cargando...</p>
+  if (loading) return <p className="p-4 text-[#00ffff]">Cargando...</p>
 
   return (
-    <div className="p-8 max-w-3xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">CTR Dinámico</h1>
+    <div className="p-8 max-w-3xl mx-auto border border-[#00ffff] rounded-xl text-[#00ffff]">
+      <h1 className="text-2xl font-bold mb-4 text-center">CTR Dinámico</h1>
 
       {/* Selector de video */}
-      <div className="mb-4">
+      <div className="mb-4 text-center">
         <label className="mr-2 font-medium">Selecciona un video:</label>
         <select
           value={selectedVideo?.id || ""}
           onChange={e => setSelectedVideo(videos.find(v => v.id === e.target.value))}
-          className="border p-2 rounded"
+          className="border border-[#00ffff] px-2 py-1 rounded bg-transparent text-[#00ffff]"
         >
           {videos.map(v => (
             <option key={v.id} value={v.id}>{v.title}</option>
@@ -83,12 +83,10 @@ export default function CtrDinamico() {
         </select>
       </div>
 
-      {/* Gráfico de views */}
+      {/* Gráfico de views y miniaturas */}
       {selectedVideo && (
         <>
           <ViewsChart userId={session.user.id} videoId={selectedVideo.id} />
-
-          {/* Botón de miniaturas debajo del gráfico */}
           <ThumbnailsComponent />
         </>
       )}
