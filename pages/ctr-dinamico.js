@@ -2,15 +2,19 @@
 
 import { useEffect, useState } from "react"
 import { useSession, signIn } from "next-auth/react"
-// 🔹 Ruta relativa a ViewsChart
 import ViewsChart from "../components/ViewsChart"
 
-// Placeholder para miniaturas, puedes reemplazar con tu componente real
+// Componente placeholder para crear miniaturas
 function ThumbnailsComponent() {
   return (
-    <div className="p-8">
-      <h2 className="text-xl font-bold mb-4">Crear miniaturas</h2>
-      <p>Aquí iría tu UI para cambiar miniaturas o títulos.</p>
+    <div className="mt-4 p-4 border rounded-lg bg-gray-100 text-black">
+      <h2 className="text-xl font-bold mb-2">Crear nueva miniatura</h2>
+      <button
+        className="bg-green-300 px-4 py-2 rounded hover:bg-green-400"
+        onClick={() => alert("Aquí iría la funcionalidad de crear miniatura")}
+      >
+        Cambiar miniatura
+      </button>
     </div>
   )
 }
@@ -20,9 +24,8 @@ export default function CtrDinamico() {
   const [videos, setVideos] = useState([])
   const [selectedVideo, setSelectedVideo] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [mode, setMode] = useState(null) // null → pantalla inicial
 
-  // 🔹 Cargar videos
+  // 🔹 Cargar videos del canal
   useEffect(() => {
     if (!session) return
     let isMounted = true
@@ -62,57 +65,33 @@ export default function CtrDinamico() {
 
   if (loading) return <p className="p-4">Cargando...</p>
 
-  // 🔹 Pantalla inicial: elegir modo
-  if (!mode) {
-    return (
-      <div className="p-8 text-center">
-        <h1 className="text-2xl font-bold mb-6">Selecciona una opción</h1>
-        <div className="flex justify-center gap-4">
-          <button
-            className="bg-blue-300 px-6 py-3 rounded hover:bg-blue-400"
-            onClick={() => setMode("charts")}
-          >
-            Ver gráficos
-          </button>
-          <button
-            className="bg-green-300 px-6 py-3 rounded hover:bg-green-400"
-            onClick={() => setMode("thumbnails")}
-          >
-            Crear miniaturas
-          </button>
-        </div>
+  return (
+    <div className="p-8 max-w-3xl mx-auto">
+      <h1 className="text-2xl font-bold mb-4">CTR Dinámico</h1>
+
+      {/* Selector de video */}
+      <div className="mb-4">
+        <label className="mr-2 font-medium">Selecciona un video:</label>
+        <select
+          value={selectedVideo?.id || ""}
+          onChange={e => setSelectedVideo(videos.find(v => v.id === e.target.value))}
+          className="border p-2 rounded"
+        >
+          {videos.map(v => (
+            <option key={v.id} value={v.id}>{v.title}</option>
+          ))}
+        </select>
       </div>
-    )
-  }
 
-  // 🔹 Modo miniaturas
-  if (mode === "thumbnails") return <ThumbnailsComponent />
-
-  // 🔹 Modo charts
-  if (mode === "charts") {
-    return (
-      <div className="p-8 max-w-3xl mx-auto">
-        <h1 className="text-2xl font-bold mb-4">CTR Dinámico</h1>
-
-        <div className="mb-4">
-          <label className="mr-2">Selecciona un video:</label>
-          <select
-            value={selectedVideo?.id || ""}
-            onChange={e => setSelectedVideo(videos.find(v => v.id === e.target.value))}
-            className="border p-2 rounded"
-          >
-            {videos.map(v => (
-              <option key={v.id} value={v.id}>{v.title}</option>
-            ))}
-          </select>
-        </div>
-
-        {selectedVideo && (
+      {/* Gráfico de views */}
+      {selectedVideo && (
+        <>
           <ViewsChart userId={session.user.id} videoId={selectedVideo.id} />
-        )}
-      </div>
-    )
-  }
 
-  return null
+          {/* Botón de miniaturas debajo del gráfico */}
+          <ThumbnailsComponent />
+        </>
+      )}
+    </div>
+  )
 }
